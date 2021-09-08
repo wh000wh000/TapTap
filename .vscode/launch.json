@@ -13,6 +13,16 @@
             "captureStreams": true,
             "AhkExecutable": "C:\\Program Files\\AutoHotkey\\AutoHotkey.exe",
             "port": 9005
-        }
+        },
+        {
+            "type": "ahkdbg",
+            "request": "launch",
+            "name": "AHKDebug",
+            "program": "${file}",
+            "stopOnEntry": false,
+            "captureStreams": true,
+            "AhkExecutable": "C:\\Program Files\\AutoHotkey\\AutoHotkey.exe",
+            "port": 9005
+        },
     ]
 }
