@@ -103,8 +103,8 @@
 <Alias> .. 부모 폴더 열기
 <Folder> ..
 # 가끔 사용하지만, 필요할 때마다 매 번 찾기 귀찮아서 별명으로 제작.
-<Alias> calculator 계산기    # 하기 실행 명령의 별명(별칭)
-<Run> calc  # 상기 별칭(별명) 적용 시, 실행할 명령(Target Type)
+<Alias> calculator 계산기
+<Run> calc
 <Alias> cmd, command 도스 명령 창
 <Run> C:\Windows\system32\cmd.exe, Z:\
 <Alias> Q, 탭탭이 종료

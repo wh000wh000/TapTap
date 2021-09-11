@@ -1,17 +1,17 @@
-Class Watch {
+Class WifeWatch {
 	static thisObject := ""
-	static WatchTitle := "TapTap_Watch"
+	static WatchTitle := "WifeWatch"
 	static __WatchDisplay := ""
 	__New() {
-		WinGetActiveTitle, activeWindowTitleBeforeWatchOn
+		thisObject := this
 
-		Gui, Watch:New, +AlwaysOnTop -SysMenu -Caption +ToolWindow, % Watch.WatchTitle
-		Gui, Watch:Color, Yellow
-		Gui, Watch:Margin, 4, 0
-		Gui, Watch:Font, S38 Bold W1000 Q4, 나눔 고딕
+		Gui, WifeWatch:New, +AlwaysOnTop -SysMenu -Caption +ToolWindow, % WifeWatch.WatchTitle
+		Gui, WifeWatch:Color, Yellow
+		Gui, WifeWatch:Margin, 4, 0
+		Gui, WifeWatch:Font, S38 Bold W1000 Q4, 나눔 고딕
 
 		FormatTime, timeString, , hh:mm
-		Gui, Watch:Add, Text, v__WatchDisplay Center cBlack, %timeString%
+		Gui, WifeWatch:Add, Text, v__WatchDisplay Center cBlack, %timeString%
 		; Known limitation: SetTimer requires a plain variable reference.
 		this.timer := ObjBindMethod(this, "RedrawWatchTime")
 		timer := this.timer
@@ -20,17 +20,14 @@ Class Watch {
 		global __WatchDisplay
 		watchDragger := ObjBindMethod(this, "DragWatch")
 		GuiControl +g, __WatchDisplay, % watchDragger
-		Gui, Watch:Show, X2160 Y0
-
-		WinActivate , %activeWindowTitleBeforeWatchOn%
-		thisObject := this
+		Gui, WifeWatch:Show, X2160 Y0
 	}
 
 	RedrawWatchTime() {
 		global __WatchDisplay
 		; FormatTime, timeString, , MM/dd ddd hh:mm:ss 월/일 요일 시:분:초
 		FormatTime, timeString, , hh:mm
-		GuiControl, Watch:Text, __WatchDisplay, %timeString%
+		GuiControl, WifeWatch:Text, __WatchDisplay, %timeString%
 
 		; 다음 시간 정밀 조정
 		FormatTime, timeString, , ss

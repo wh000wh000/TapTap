@@ -10,6 +10,7 @@ global T_ArbEdit := ""
 global T_ArbList := ""
 global T_ArbEnter := ""
 global T_AliasList := ""
+global T_SetUp := ""
 global T_TapTapTitle := "ARB_TapTap"
 global T_ActiveWinowTitleOnArb := ""
 global T_IsArbShowing := false
@@ -17,7 +18,6 @@ global T_IsInputHighLighting := false
 
 InitTapTap()
 CreateARB()
-THelper_Run("T_OnTapTapBoot")
 return
 
 ; CapsLock 키 변경 to LControl by KeyTweak
@@ -28,6 +28,9 @@ return
 
 ; 프로그램 함수
 T_ShowAliasRunBox() {
+
+}
+ShowAliasRunBox() {
 	if (T_IsArbShowing)
 		return
 	If (A_ThisHotkey = A_PriorHotkey and A_TimeSincePriorHotkey < 350)
@@ -201,18 +204,24 @@ InitTapTap() {
 	CreateFolder(A_WorkingDir . "\Lib\AHK")
 	CreateFolder(A_WorkingDir . "\Lib\Python")
 
-	dest := A_WorkingDir . "\Lib\TapTap.AliasList"
-	FileInstall, TapTap.AliasList.Org, %dest%
-	dest := A_WorkingDir . "\Lib\AHK\Hotkey_Help.ahk"
-	FileInstall, Hotkey_Help.ahk, %dest%
-	dest := A_WorkingDir . "\Lib\AHK\Hotkey_1.ahk"
-	FileInstall, Hotkey_1.ahk, %dest%
-	dest := A_WorkingDir . "\Lib\AHK\ScreenSaver.ahk"
-	FileInstall, ScreenSaver.ahk, %dest%
-	dest := A_WorkingDir . "\Lib\AHK\Watch.ahk"
-	FileInstall, Watch.ahk, %dest%
+	; dest := A_WorkingDir . "\Lib\TapTap.AliasList"
+	; FileInstall, TapTap.AliasList.Org, %dest%
+	; dest := A_WorkingDir . "\Lib\AHK\Hotkey_Help.ahk"
+	; FileInstall, Hotkey_Help.ahk, %dest%
+	; dest := A_WorkingDir . "\Lib\AHK\Hotkey_1.ahk"
+	; FileInstall, Hotkey_1.ahk, %dest%
+	; dest := A_WorkingDir . "\Lib\AHK\ScreenSaver.ahk"
+	; FileInstall, ScreenSaver.ahk, %dest%
+	; dest := A_WorkingDir . "\Lib\AHK\Watch.ahk"
+	; FileInstall, Watch.ahk, %dest%
 
 	global T_AliasList := new AliasList()
+	T_AliasList.RunOnBoot()
+
+	; 탭탭이(TapTap) ARB 기동 용 핫키 지정
+	global T_SetUp := new SetUp()
+	hotkey := T_SetUp.dict["Hotkey"]
+	Hotkey, %hotkey%, ShowAliasRunBox
 }
 
 CreateFolder(folder) {
@@ -222,4 +231,4 @@ CreateFolder(folder) {
 }
 
 #Include, AliasList.ahk
-#Include, TapTap_SetUp.ahk
+#Include, SetUp.ahk

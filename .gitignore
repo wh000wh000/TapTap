@@ -1,4 +1,2 @@
 # TapTap .gitignore
-Lib/
-!Lib/TapTap.AliasList
 AutoHotkey/

@@ -6,6 +6,7 @@ Class AliasList {
 	static aliasIndex := 0	; 선택하는 Alias의 AliasList 배열에서의 index
 	static aliasId := 0
 	static aliasListFile := "Lib\TapTap.AliasList"
+	static onBootAlias := ""
 
 	__New() {
 		this.MakeList()
@@ -52,6 +53,10 @@ Class AliasList {
 		return list
 	}
 
+	RunOnBoot() {
+		AliasList.onBootAlias.Run("")
+	}
+
 	RunAlias(alias) {
 		command := Trim(alias)
 		option := ""
@@ -90,14 +95,15 @@ Class AliasList {
 			aliasLine := ""
 			aliasType := ""
 			typeLine := ""
+			isAliasParsing := true
 			Loop, read, %aliasListFile%
 			{
 				if (Trim(A_LoopReadLine) = "" or InStr(A_LoopReadLine, "#"))	; '#'을 포함한 줄은 모두 제거
 					continue
-				if (aliasLine = "" and InStr(A_LoopReadLine, "<Alias>")) {
+				if (isAliasParsing and InStr(A_LoopReadLine, "<Alias>")) {
 					pos := InStr(A_LoopReadLine, ">")
 					aliasLine := Trim(SubStr(A_LoopReadLine, pos + 1))
-				} else if (aliasLine != "" and RegExMatch(A_LoopReadLine, "i)<[a-z]+>") and !InStr(A_LoopReadLine, "<Alias>")) {
+				} else if (!isAliasParsing and RegExMatch(A_LoopReadLine, "i)<[a-z]+>") and !InStr(A_LoopReadLine, "<Alias>")) {
 					left := InStr(A_LoopReadLine, "<")
 					right := InStr(A_LoopReadLine, ">")
 					aliasType := Trim(SubStr(A_LoopReadLine, left + 1, right - left - 1))
@@ -105,12 +111,19 @@ Class AliasList {
 				} else {
 					Throw, "별칭 명령어 구문 해석 실패"
 				}
-				if (aliasType = "")
+				if (isAliasParsing) {
+					isAliasParsing := false
 					continue
+				} else {
+					isAliasParsing := true
+				}
 				alias_ := new Alias(aliasType, aliasLine, typeLine)
-				aliasLine := ""
-				aliasType := ""
-				aliasList_.push(alias_)
+				if (alias_.aliasType = "OnBoot") {
+					AliasList.onBootAlias := alias_
+				} else {
+					aliasList_.push(alias_)
+				}
+				isAliasParsing := true
 			}
 			AliasList.aliasList := aliasList_
 		} catch e {
