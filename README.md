@@ -7,5 +7,5 @@
   - 프로그램 실행 도우미
   - ini File을 사용하여 프로그램 관리
   - 기동 시, 실행할 프로그램 지정 가능
-  - TapTap에 사용할 별명 및 Hotkey 실시간 변경 가능
+  - TapTap에 사용할 별칭(별명, Alias) 및 Hotkey 실시간 변경 가능
   - 일반 응용 프로그램은 물론, Python, AutoHotkey Script 사용 가능

@@ -1,3 +1,5 @@
 # TapTap .gitignore
+
 AliasList.ini
+Lib/
 AutoHotkey/
