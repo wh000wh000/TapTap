@@ -25,30 +25,13 @@ T_BuiltIn_Reload() {
 }
 
 /*
-    탭탭이에서 사용하는 오토핫키 핫키
-*/
-; 탭탭이(TapTap) ARB 기동 용 핫키 지정
-; Control::   ; Control 키 Hotkey
-Alt::       ; Alt 키 Hotkey
-; Shift::     ; Shift 키 Hotkey
-; F1::        ; F1 키 Hotkey
-T_ShowAliasRunBox() ; 탭탭이 별칭 입력창(Alias Run Box) 보이기
-return
-
-/*
     탭탭이 관련 실행 루틴
 */
 ; 탭탭이 기동 시, 자동 실행 루틴
 T_OnTapTapBoot() {
-    ; new Watch() ; 색시 시계
-    ; new ScreenSaver()   ; 마우스 포인터를 화면 좌상단(0, 0) 으로 가져가면 화면 보호기 실행
+    new Watch() ; 색시 시계
+    new ScreenSaver()   ; 마우스 포인터를 화면 좌상단(0, 0) 으로 가져가면 화면 보호기 실행
 }
-
-/*
-    Hotkey 용 실행 루틴 파일 Include
-*/
-; #Include, AHK\Watch.ahk
-; #Include, AHK\ScreenSaver.ahk
 
 /*
     탭탭이 도우미 클래스
@@ -117,3 +100,20 @@ class T_TapTapHelper {
         Reload
     }
 }
+
+/*
+    탭탭이에서 사용하는 오토핫키 핫키
+*/
+; 탭탭이(TapTap) ARB 기동 용 핫키 지정
+; Control::   ; Control 키 Hotkey
+Alt::       ; Alt 키 Hotkey
+; Shift::     ; Shift 키 Hotkey
+; F1::        ; F1 키 Hotkey
+T_ShowAliasRunBox() ; 탭탭이 별칭 입력창(Alias Run Box) 보이기
+return
+
+/*
+    Hotkey 용 실행 루틴 파일 Include
+*/
+#Include, Lib\AHK\Watch.ahk
+#Include, Lib\AHK\ScreenSaver.ahk
