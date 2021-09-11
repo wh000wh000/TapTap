@@ -5,7 +5,8 @@
 - OS: 윈도우 10 64bit
 - 세부 기능:
   - 프로그램 실행 도우미
-  - ini File을 사용하여 프로그램 관리
+  - ~~ini File을 사용하여 프로그램 관리~~
+  - 번잡한 ini File 대신 간소화된 TapTap.AliasList 사용
   - 기동 시, 실행할 프로그램 지정 가능
-  - TapTap에 사용할 별명 및 Hotkey 실시간 변경 가능
+  - TapTap에 사용할 별칭(별명, Alias) 및 Hotkey 실시간 변경 가능
   - 일반 응용 프로그램은 물론, Python, AutoHotkey Script 사용 가능
