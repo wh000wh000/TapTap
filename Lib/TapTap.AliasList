@@ -98,12 +98,12 @@
 # 숫자 Hotkey 사용 예.
 # Hotkey: 숫자 '1' 키
 <Alias> 1, 숫자 '1' 키를 눌러서 인사받기
-<Hotkey> c:\Program Files\AutoHotkey\AutoHotkey.exe /CP65001, z:\Workspace\TapTap\Lib\AHK\Hotkey_1.ahk
+<Hotkey> c:\Program Files\AutoHotkey\AutoHotkey.exe /CP65001, z:\Workspace\TapTap\Lib\AHK\Hotkey_1.ahk 1
 
 # 영문자 Hotkey 사용 예.
 # Hotkey: 영문자 'A' 키
 <Alias> A, 영문자 'A' 키를 눌러서 인사받기
-<Hotkey> c:\Program Files\AutoHotkey\AutoHotkey.exe /CP65001 z:\Workspace\TapTap\Lib\AHK\Hotkey_Etc.ahk
+<Hotkey> c:\Program Files\AutoHotkey\AutoHotkey.exe /CP65001 z:\Workspace\TapTap\Lib\AHK\Hotkey_Etc.ahk, A
 # 파일 탐색기를 이용하여 현재 폴더 화면을 보여줌.
 <Alias> . 현재 폴더 열기
 <Folder> .

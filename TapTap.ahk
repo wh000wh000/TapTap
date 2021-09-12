@@ -4,13 +4,14 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #SingleInstance, Force
 #Persistent
-FileEncoding, UTF-8
+FileEncoding, UTF-8-RAW
 
 global T_ArbEdit := ""
 global T_ArbList := ""
 global T_ArbEnter := ""
 global T_AliasList := ""
 global T_SetUp := ""
+global T_Hotkey := ""
 global T_TapTapTitle := "ARB_TapTap"
 global T_ActiveWinowTitleOnArb := ""
 global T_IsArbShowing := false
@@ -27,12 +28,13 @@ SetCapsLockState % !GetKeyState("CapsLock", "T")
 return
 
 ; 프로그램 함수
-T_ShowAliasRunBox() {
-
-}
 ShowAliasRunBox() {
 	if (T_IsArbShowing)
 		return
+	if IsHotkeyChanged() {
+		ResetHotkey()
+		return
+	}
 	If (A_ThisHotkey = A_PriorHotkey and A_TimeSincePriorHotkey < 350)
 		ShowARB()
 }
@@ -219,9 +221,27 @@ InitTapTap() {
 	T_AliasList.RunOnBoot()
 
 	; 탭탭이(TapTap) ARB 기동 용 핫키 지정
+	SetHotkey()
+}
+
+IsHotkeyChanged() {
+	if (T_Hotkey != "" and T_Hotkey != T_SetUp.GetValue("Hotkey"))
+		return true
+	else
+		return false
+}
+
+ResetHotkey() {
+	global T_Hotkey
+	Hotkey, %T_Hotkey%, ShowAliasRunBox, Off
+	global T_Hotkey := T_SetUp.GetValue("Hotkey")
+	Hotkey, %T_Hotkey%, ShowAliasRunBox
+}
+
+SetHotkey() {
 	global T_SetUp := new SetUp()
-	hotkey := T_SetUp.dict["Hotkey"]
-	Hotkey, %hotkey%, ShowAliasRunBox
+	global T_Hotkey := T_SetUp.GetValue("Hotkey")
+	Hotkey, %T_Hotkey%, ShowAliasRunBox
 }
 
 CreateFolder(folder) {

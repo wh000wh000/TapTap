@@ -4,6 +4,8 @@ class Alias {
 	; 탭탭이 종료
 	; BuiltIn 'Q'키
 	BuiltInQuit() {
+		hotkey := T_SetUp.dict["Hotkey"]
+		Hotkey, %hotkey%, ShowAliasRunBox, Off
 		T_SetUp.WriteSetUpFile()
 		ExitApp
 	}
@@ -11,6 +13,8 @@ class Alias {
 	; 탭탭이 재 실행
 	; 'R'키 Hotkey
 	BuiltInReload() {
+		hotkey := T_SetUp.dict["Hotkey"]
+		Hotkey, %hotkey%, ShowAliasRunBox, Off
 		T_SetUp.WriteSetUpFile()
 		Reload
 	}
@@ -28,10 +32,10 @@ class Alias {
 				%builtInFunc%()
 				return "BuiltIn"
 			} else if (aliasType = "Hotkey") {
-				Run, %command% %defaultOption% %alias_%, %workingDir%
+				Run, %command% %defaultOption%, %workingDir%
 				return "Hotkey"
 			} else if (aliasType = "Etc") {
-
+				Run, %command% %option% %defaultOption%, %workingDir%
 			} else {
 				Run, %command% %option% %defaultOption%, %workingDir%
 			}
