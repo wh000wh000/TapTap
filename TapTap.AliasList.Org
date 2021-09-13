@@ -87,6 +87,10 @@
 #<Alias> aliasName, an 별칭, 별명
 #<Etc> 전혀 의미없는 Comment 명령어
 
+# 탭탭이 기동(부팅) 시, 자동 실행 루틴
+<Alias> 부팅 초기 자동 실행 루틴
+<OnBoot> c:\Program Files\AutoHotkey\AutoHotkey.exe z:\Workspace\TapTap\Lib\AHK\TapTap_Boot.ahk, Boot_Option
+
 # 주석 란: 어떤 내용을 적어도 무시되는 줄(Line)
 # 탭탭이에서 사용하는 명령어(Alias)를 명령어 종류 별로 구분하여 보여 줌.
 <Alias> ? 탭탭이 별칭(별명, Alias) 목록

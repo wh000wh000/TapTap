@@ -1,3 +1,4 @@
 # TapTap .gitignore
-Lib/
+Lib/AHK/
+Lib/Python/
 AutoHotkey/
