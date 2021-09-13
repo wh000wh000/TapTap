@@ -1,11 +1,11 @@
-#Include, Alias.ahk
+﻿#Include, Alias.ahk
 Class AliasList {
 	static aliasList := ""	; Alias List 배열
 	static modificationTime := ""
 	static previousAlias := ""
 	static aliasIndex := 0	; 선택하는 Alias의 AliasList 배열에서의 index
 	static aliasId := 0
-	static aliasListFile := "Lib\TapTap.AliasList"
+	static aliasListFile := "Lib\_SetUp\TapTap.AliasList"
 	static onBootAlias := ""
 
 	__New() {

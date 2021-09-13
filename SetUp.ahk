@@ -1,5 +1,5 @@
-class SetUp {
-    static setUpFile := A_WorkingDir . "\Lib\TapTap.SetUp"
+﻿class SetUp {
+    static setUpFile := A_WorkingDir . "\Lib\_SetUp\TapTap.SetUp"
     static modificationTime = ""
     static dict = ""
     __new() {

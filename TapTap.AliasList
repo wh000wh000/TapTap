@@ -1,4 +1,4 @@
-# 별칭(별명) 명령어 리스트 파일
+﻿# 별칭(별명) 명령어 리스트 파일
 # 파일 명: Lib\TapTap.AliasList
 
 # 주석(Comment): "#" 기호가 포함된 라인의 글은 전부 무시되므로, "#" 기호를 주석 용도로 사용함.
@@ -89,7 +89,7 @@
 
 # 탭탭이 기동(부팅) 시, 자동 실행 루틴
 <Alias> 부팅 초기 자동 실행 루틴
-<OnBoot> c:\Program Files\AutoHotkey\AutoHotkey.exe /CP65001 z:\Workspace\TapTap\Lib\AHK\TapTap_Boot.ahk, Boot_Option
+<OnBoot> c:\Program Files\AutoHotkey\AutoHotkey.exe z:\Workspace\TapTap\Lib\AHK\TapTap_Boot.ahk, Boot_Option
 
 # 주석 란: 어떤 내용을 적어도 무시되는 줄(Line)
 # 탭탭이에서 사용하는 명령어(Alias)를 명령어 종류 별로 구분하여 보여 줌.

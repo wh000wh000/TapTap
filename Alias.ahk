@@ -1,4 +1,4 @@
-class Alias {
+﻿class Alias {
 	static lowerCase := "abcdefghijklmnopqrstuvwxyz."
 
 	; 탭탭이 종료
