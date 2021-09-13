@@ -1,4 +1,4 @@
-Class ScreenSaver {
+﻿Class ScreenSaver {
 	static thisObject := ""
 	static isScreenSavering := false
 	static timer := ""

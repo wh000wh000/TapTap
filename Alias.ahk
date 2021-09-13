@@ -1,5 +1,23 @@
-Class Alias {
+﻿class Alias {
 	static lowerCase := "abcdefghijklmnopqrstuvwxyz."
+
+	; 탭탭이 종료
+	; BuiltIn 'Q'키
+	BuiltInQuit() {
+		hotkey := T_SetUp.dict["Hotkey"]
+		Hotkey, %hotkey%, ShowAliasRunBox, Off
+		T_SetUp.WriteSetUpFile()
+		ExitApp
+	}
+
+	; 탭탭이 재 실행
+	; 'R'키 Hotkey
+	BuiltInReload() {
+		hotkey := T_SetUp.dict["Hotkey"]
+		Hotkey, %hotkey%, ShowAliasRunBox, Off
+		T_SetUp.WriteSetUpFile()
+		Reload
+	}
 
 	Run(option) {
 		alias_ := this.aliases[1]
@@ -8,34 +26,40 @@ Class Alias {
 		defaultOption := this.option
 		workingDir := this.workingDir
 		try {
-			if (this.aliasType = "BuiltIn") {
-				command := "T_BuiltIn_" . command
-				THelper_Run(command)
+			if (aliasType = "BuiltIn") {
+				func := "BuiltIn" . command
+				builtInFunc := ObjBindMethod(this, func)
+				%builtInFunc%()
 				return "BuiltIn"
-			} if (this.aliasType = "Hotkey") {
-				Run, %command% %defaultOption% %alias_%, %workingDir%
+			} else if (aliasType = "Hotkey") {
+				Run, %command% %defaultOption%, %workingDir%
 				return "Hotkey"
-			} if (aliasType = "Run") {
-				Run, % command " " option, % workingDir
-			} else if (aliasType = "NewRun") {
-				Run, % command " " option, % workingDir
-			} else if (aliasType = "Script") {
-
-			} else if (aliasType = "Folder") {
-
-			} else if (aliasType = "Site") {
-
 			} else if (aliasType = "Etc") {
-
+				Run, %command% %option% %defaultOption%, %workingDir%
+			} else {
+				Run, %command% %option% %defaultOption%, %workingDir%
 			}
+			; if (aliasType = "Run") {
+			; 	Run, % command " " option, % workingDir
+			; } else if (aliasType = "NewRun") {
+			; 	Run, % command " " option, % workingDir
+			; } else if (aliasType = "Script") {
+
+			; } else if (aliasType = "Folder") {
+
+			; } else if (aliasType = "Site") {
+
+			; } else if (aliasType = "Etc") {
+
+			; }
 			return "Ok"
 		} catch e {
-			msg = "명령어 타입: " . aliasType . "`n"
+			msg := "명령어 타입: " . aliasType . "`n"
 			msg .= "명령어: " . command . "`n"
-			msg .= "옵션: " . defaultOption . option . "`n"
-			msg .= "작업 폴더: " . workingDir
-			msg := e . "`n"
-			MsgBox, , 별칭 명령 실행 에러, %msg%
+			msg .= "옵션: " . option . defaultOption . "`n"
+			msg .= "작업 폴더: " . workingDir . "`n"
+			msg .= e
+			MsgBox, 16, "별칭 명령 실행 에러", %msg%
 			return "Error"
 		}
 	}
@@ -77,8 +101,7 @@ Class Alias {
 		For index, value in outArray
 		{
 			elem := Trim(value)
-			if (elem != "")
-				array_.push(elem)
+			array_.push(elem)
 		}
 		return array_
 	}
@@ -89,8 +112,8 @@ Class Alias {
 		{
 			if (str = "")
 				str := value
-			else
-				str := str . ", " . value
+			else if (value != "")
+					str := str . ", " . value
 		}
 		return str
 	}
@@ -113,13 +136,15 @@ Class Alias {
 			this.winTitle := Trim(typeArray.RemoveAt(1))
 		}
 
-		; msg := "AliasType: " . this.AliasType
-		; msg .= "`n" . "Alias: " . this.GetStringFromArray(this.aliases)
-		; msg .= "`n" . "Command: " . this.command
-		; msg .= "`n" . "Option: " . this.option
-		; msg .= "`n" . "Working Dir: " . this.workingDir
-		; msg .= "`n" . "Window Title: " . this.winTitle
-		; MsgBox, %msg%
+		; if (this.workingDir or this.winTitle) {
+		; 	msg := "AliasType: " . this.AliasType
+		; 	msg .= "`n" . "Alias: " . this.GetStringFromArray(this.aliases)
+		; 	msg .= "`n" . "Command: " . this.command
+		; 	msg .= "`n" . "Option: " . this.option
+		; 	msg .= "`n" . "Working Dir: " . this.workingDir
+		; 	msg .= "`n" . "Window Title: " . this.winTitle
+		; 	MsgBox, %msg%
+		; }
 	}
 	i_New(comment:="", aliases:="", aliasType:="", command ="", option:= "", workingDir:="", showCmd:="", winTitle:="", mainMenu:= "", mainIndex:="", subMenu:="", subIndex:="") {
 		this.comment := comment

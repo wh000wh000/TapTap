@@ -1,4 +1,4 @@
-#NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
+﻿; #NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
 #Warn  ; Enable warnings to assist with detecting common errors.
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
@@ -10,6 +10,8 @@ global T_ArbEdit := ""
 global T_ArbList := ""
 global T_ArbEnter := ""
 global T_AliasList := ""
+global T_SetUp := ""
+global T_Hotkey := ""
 global T_TapTapTitle := "ARB_TapTap"
 global T_ActiveWinowTitleOnArb := ""
 global T_IsArbShowing := false
@@ -17,7 +19,6 @@ global T_IsInputHighLighting := false
 
 InitTapTap()
 CreateARB()
-THelper_Run("T_OnTapTapBoot")
 return
 
 ; CapsLock 키 변경 to LControl by KeyTweak
@@ -27,9 +28,13 @@ SetCapsLockState % !GetKeyState("CapsLock", "T")
 return
 
 ; 프로그램 함수
-T_ShowAliasRunBox() {
+ShowAliasRunBox() {
 	if (T_IsArbShowing)
 		return
+	if IsHotkeyChanged() {
+		ResetHotkey()
+		return
+	}
 	If (A_ThisHotkey = A_PriorHotkey and A_TimeSincePriorHotkey < 350)
 		ShowARB()
 }
@@ -198,21 +203,80 @@ CreateARB() {
 
 InitTapTap() {
 	CreateFolder(A_WorkingDir . "\Lib")
+	CreateFolder(A_WorkingDir . "\Lib\_SetUp")
 	CreateFolder(A_WorkingDir . "\Lib\AHK")
 	CreateFolder(A_WorkingDir . "\Lib\Python")
 
-	dest := A_WorkingDir . "\Lib\TapTap.AliasList"
-	FileInstall, TapTap.AliasList.Org, %dest%
-	dest := A_WorkingDir . "\Lib\AHK\Hotkey_Help.ahk"
-	FileInstall, Hotkey_Help.ahk, %dest%
-	dest := A_WorkingDir . "\Lib\AHK\Hotkey_1.ahk"
-	FileInstall, Hotkey_1.ahk, %dest%
-	dest := A_WorkingDir . "\Lib\AHK\ScreenSaver.ahk"
-	FileInstall, ScreenSaver.ahk, %dest%
-	dest := A_WorkingDir . "\Lib\AHK\Watch.ahk"
-	FileInstall, Watch.ahk, %dest%
+	CopyInitFiles()
 
 	global T_AliasList := new AliasList()
+	T_AliasList.RunOnBoot()
+
+	; 탭탭이(TapTap) ARB 기동 용 핫키 지정
+	SetHotkey()
+}
+
+IsHotkeyChanged() {
+	if (T_Hotkey != "" and T_Hotkey != T_SetUp.GetValue("Hotkey"))
+		return true
+	else
+		return false
+}
+
+ResetHotkey() {
+	global T_Hotkey
+	Hotkey, %T_Hotkey%, ShowAliasRunBox, Off
+	global T_Hotkey := T_SetUp.GetValue("Hotkey")
+	Hotkey, %T_Hotkey%, ShowAliasRunBox
+}
+
+SetHotkey() {
+	global T_SetUp := new SetUp()
+	global T_Hotkey := T_SetUp.GetValue("Hotkey")
+	Hotkey, %T_Hotkey%, ShowAliasRunBox
+}
+
+; FileInstall Bug : Source File이 %A_WorkingDir% 이외의 곳에 있으면,
+; 절대 경로, 상대 경로 전부 안 먹음.
+CopyInitFiles() {
+	; 필수 파일
+	destFile := A_WorkingDir . "\Lib\_SetUp\AutoHotkey.exe"
+	if !FileExist(destFile)  {
+		FileInstall, AutoHotkey.exe, %destFile%, 0
+	}
+	destFile := A_WorkingDir . "\Lib\_SetUp\TapTap.SetUp"
+	if !FileExist(destFile) {
+		FileInstall, TapTap.SetUp, %destFile%, 0
+	}
+	destFile := A_WorkingDir . "\Lib\_SetUp\TapTap.AliasList"
+	if !FileExist(destFile) {
+		FileInstall, TapTap.AliasList.Org, %destFile%, 0
+	}
+	; 예제 파일
+	destFile := A_WorkingDir . "\Lib\AHK\Hotkey_1.ahk"
+	if !FileExist(destFile) {
+		FileInstall, Hotkey_1.Org, %destFile%, 0
+	}
+	destFile := A_WorkingDir . "\Lib\AHK\Hotkey_Etc.ahk"
+	if !FileExist(destFile) {
+		FileInstall, Hotkey_Etc.Org, %destFile%, 0
+	}
+	destFile := A_WorkingDir . "\Lib\AHK\Hotkey_Help.ahk"
+	if !FileExist(destFile) {
+		FileInstall, Hotkey_Help.Org, %destFile%, 0
+	}
+	destFile := A_WorkingDir . "\Lib\AHK\ScreenSaver.ahk"
+	if !FileExist(destFile) {
+		FileInstall, ScreenSaver.Org, %destFile%, 0
+	}
+	destFile := A_WorkingDir . "\Lib\AHK\WifeWatch.ahk"
+	if !FileExist(destFile) {
+		FileInstall, WifeWatch.Org, %destFile%, 0
+	}
+	destFile := A_WorkingDir . "\Lib\AHK\TapTap_Boot.ahk"
+	if !FileExist(destFile) {
+		FileInstall, TapTap_Boot.Org, %destFile%, 0
+	}
 }
 
 CreateFolder(folder) {
@@ -222,4 +286,4 @@ CreateFolder(folder) {
 }
 
 #Include, AliasList.ahk
-#Include, TapTap_SetUp.ahk
+#Include, SetUp.ahk
