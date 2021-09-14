@@ -126,8 +126,8 @@
 <Alias> www [], 크롬
 <Run> www.google.co.kr
 # 탭탭이 기동(부팅) 시, 자동 실행 루틴
-<Alias> 부팅 초기 자동 실행 루틴
-<OnBoot> Lib\AHK\TapTap_Boot.ahk, Boot_Option
+<OnBoot> 부팅 초기 자동 실행 루틴
+<Run> Lib\AHK\TapTap_Boot.ahk, Boot_Option
 # Etc 타입은 명령어 작성란에 어떤 내용을 적어도 전혀 저장되지 않음.
 <Alias> zzzZz, 별칭이 없는 프로그램 작성 용도로 명령어를 입력해도 프로그램 실행 불가.
 <Etc>   zzzZz 이곳엔 내용을 써도 전혀 참조하지 않음.

@@ -1,4 +1,4 @@
-﻿#Include, Alias.ahk
+﻿#Include "Alias.ahk"
 Class AliasList {
 	static aliasList := ""	; Alias List 배열
 	static modificationTime := ""
@@ -85,10 +85,10 @@ Class AliasList {
 		; ini 파일 생성
 		aliasListFile := AliasList.aliasListFile
 		if !FileExist(aliasListFile) {
-			FileInstall, AliasList.ini.Default, %aliasListFile%, 0
+			FileInstall("AliasList.ini.Default", aliasListFile, 0)
 		}
 		; ini 날짜 비교, ini 파일 수정 시만 새로 List 작업
-		FileGetTime, fileTime , % aliasListFile, M
+		fileTime := FileGetTime(aliasListFile, "M")
 		if (AliasList.modificationTime = fileTime) {
 			return
 		} else {
@@ -102,7 +102,7 @@ Class AliasList {
 			typeLine := ""
 			isAliasParsing := false
 			parsingStage := 0
-			Loop, read, %aliasListFile%
+			Loop read, aliasListFile
 			{
 				if (Trim(A_LoopReadLine) = "" or InStr(A_LoopReadLine, "#"))	; '#'을 포함한 줄은 모두 제거
 					continue
@@ -120,12 +120,12 @@ Class AliasList {
 					typeLine := Trim(SubStr(A_LoopReadLine, right + 1))
 					isAliasParsing := true
 				} else {
-					Throw, "별칭 명령어 구문 해석 실패"
+					Throw "별칭 명령어 구문 해석 실패"
 				}
 				if (!isAliasParsing)
 					continue
 
-				alias_ := new Alias(aliasType, aliasLine, typeLine)
+				alias_ := Alias(aliasType, aliasLine, typeLine)
 				if (parsingStage = 1) {
 					aliasList_.push(alias_)
 				} else if (parsingStage = 2) {
@@ -135,8 +135,8 @@ Class AliasList {
 				parsingStage := 0
 			}
 			AliasList.aliasList := aliasList_
-		} catch e {
-			MsgBox, 16, 별칭 명령어 리스트, %e%
+		} catch Error as e {
+			MsgBox(e, , 16)
 			ExitApp
 		}
 	}

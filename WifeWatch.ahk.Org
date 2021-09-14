@@ -1,9 +1,11 @@
 ﻿Class WifeWatch {
 	static thisObject := ""
 	static WatchTitle := "WifeWatch"
-	static __WatchDisplay := ""
+	static activeWindow := ""
+
 	__New() {
 		thisObject := this
+		this.SaveActiveWindow()
 
 		Gui, WifeWatch:New, +AlwaysOnTop -SysMenu -Caption +ToolWindow, % WifeWatch.WatchTitle
 		Gui, WifeWatch:Color, Yellow
@@ -17,10 +19,24 @@
 		timer := this.timer
 		SetTimer, % timer, -250
 
-		global __WatchDisplay
 		watchDragger := ObjBindMethod(this, "DragWatch")
 		GuiControl +g, __WatchDisplay, % watchDragger
 		Gui, WifeWatch:Show, X2160 Y0
+
+		this.RestoreActiveWindow()
+	}
+
+	RestoreActiveWindow() {
+		SetTitleMatchMode, 2
+		WinActivate, % WifeWatch.activeWindow
+	}
+
+	SaveActiveWindow() {
+		title = WinExist("A")
+		if (!title) {
+			MouseGetPos, , , title
+		}
+		WifeWatch.activeWindow := title
 	}
 
 	RedrawWatchTime() {

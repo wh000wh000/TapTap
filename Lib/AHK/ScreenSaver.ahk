@@ -2,11 +2,14 @@
 	static thisObject := ""
 	static isScreenSavering := false
 	static timer := ""
+	static activeWindow := ""
 
 	__New() {
+		this.SaveActiveWindow()
 		ScreenSaver.timer := ObjBindMethod(this, "RunScreenSaver")
 		this.SetScreenSaverTime()
 		thisObject := this
+		this.RestoreActiveWindow()
 	}
 
 	SetScreenSaverTime(interval := 300) {
@@ -19,6 +22,19 @@
 		}
 		timer := ScreenSaver.timer
 		SetTimer, % timer, % baseInterval
+	}
+
+	RestoreActiveWindow() {
+		SetTitleMatchMode, 2
+		WinActivate, % ScreenSaver.activeWindow
+	}
+
+	SaveActiveWindow() {
+		title = WinExist("A")
+		if (!title) {
+			MouseGetPos, , , title
+		}
+		ScreenSaver.activeWindow := title
 	}
 
 	RunScreenSaver() {
