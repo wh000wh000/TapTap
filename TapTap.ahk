@@ -16,7 +16,7 @@ global T_AliasList := ""
 global T_SetUp := ""
 global T_Hotkey := ""
 global T_TapTapTitle := "ARB_TapTap"
-global T_ActiveWinowTitleOnArb := ""
+global T_ActiveWindowOnArb := ""
 global T_IsArbShowing := false
 global T_IsInputHighLighting := false
 
@@ -57,11 +57,13 @@ HideARB() {
 ARBGuiEscape(_) {
 	HideARB()
 	global T_IsArbShowing := false
-	WinActivate(T_ActiveWinowTitleOnArb)
+
+	SetTitleMatchMode(2)
+	WinActivate(T_ActiveWindowOnArb)
 }
 
 TabProcessTimer() {
-	previousAlias := T_AliasList.previousAlias
+	previousAlias := AliasList.previousAlias
 	; GuiControl, , Edit1, % previousAlias	; 안 먹힘
 	; ControlSend, Edit1, {Enter}, % T_TapTapTitle
 	ControlSend("{BackSpace}" . previousAlias . "{Enter}", "Edit1", T_TapTapTitle)
@@ -72,7 +74,7 @@ TabDeleteTimer() {
 }
 
 SpaceProcessTimer() {
-	previousAlias := T_AliasList.previousAlias
+	previousAlias := AliasList.previousAlias
 	; GuiControl, , Edit1, % previousAlias	; 안 먹힘
 	ControlSend("{End}{Space}", "Edit1", T_TapTapTitle)
 }
@@ -85,7 +87,7 @@ ARBGuiEditHandler(ab, _) {
 	; 입력란 하이라이트, Tab, Space 처리
 	if (T_IsInputHighLighting) {
 		T_IsInputHighLighting := false
-		previousAlias := T_AliasList.previousAlias
+		previousAlias := AliasList.previousAlias
 		if InStr(arbEdit, A_Space) {
   			T_ArbEdit.Value := previousAlias
 			SetTimer(SpaceProcessTimer, -20)
@@ -148,7 +150,7 @@ UpdateListView(alias_) {
 }
 
 PreviousAliasSendTimer() {
-	previousAlias := T_AliasList.previousAlias
+	previousAlias := AliasList.previousAlias
 	if (previousAlias = "") {
 		ControlSend("^a{Space}{BackSpace}", "Edit1", T_TapTapTitle)
 	} else {
@@ -158,9 +160,10 @@ PreviousAliasSendTimer() {
 }
 
 ShowARB() {
-	global T_ActiveWinowTitleOnArb, T_AliasList
+	global T_AliasList
     global T_IsArbShowing := true
-	T_ActiveWinowTitleOnArb := WinGetTitle("A")
+
+	SaveActiveWindow()
 
 	CoordMode("Mouse", "Screen")
 	MouseGetPos(&mouseX, &mouseY)
@@ -174,7 +177,7 @@ ShowARB() {
 
 	mouseX := posX + 100
 	mouseY := posY + 15
-	MouseMove("mouseX", "mouseY")
+	MouseMove(mouseX, mouseY)
 
 	; SetTimer, PreviousAliasSendTimer, -10
 	; previousAlias := T_AliasList.previousAlias
@@ -189,13 +192,20 @@ ShowARB() {
 	SetTimer(EscapeArbTimer,1000)
 }
 
+SaveActiveWindow() {
+	global T_ActiveWindowOnArb
+	T_ActiveWindowOnArb := WinExist("A")
+	if (!T_ActiveWindowOnArb) {
+		MouseGetPos( , , &T_ActiveWindowOnArb)
+	}
+}
+
 EscapeArbTimer() {
 	if WinActive(T_TapTapTitle) {
 		return
 	}
 
-	global T_ActiveWinowTitleOnArb
-	T_ActiveWinowTitleOnArb := WinGetTitle("A")
+	SaveActiveWindow()
 
 	ControlSend("{Escape}", "Edit1", T_TapTapTitle)
 }

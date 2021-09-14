@@ -2,19 +2,11 @@
 	static lowerCase := "abcdefghijklmnopqrstuvwxyz."
 
 	QuitTapTap(_) {
-		; this.DoBeforeQuit()
 		ExitApp
 	}
 
 	ReloadTapTap(_) {
-		; this.DoBeforeQuit()
 		Reload
-	}
-
-	DoBeforeQuit(_) {
-		ShortCut := SetUp.dict["Hotkey"]
-		Hotkey(ShortCut, ShowAliasRunBox, "Off")
-		SetUp.WriteSetUpFile()
 	}
 
 	EditIni(option) {
@@ -26,20 +18,18 @@
 			for index, value in options {
 				if InStr(value, option, true) {
 					builtInFunc := ObjBindMethod(this, builtIns[index])
-					%builtInFunc%()
-					return
+					return builtInFunc()
 				}
 			}
 		} else if (option) {
 			for index, value in options {
 				if InStr(value, option) {
 					builtInFunc := ObjBindMethod(this, builtIns[index])
-					%builtInFunc%()
-					return
+					return builtInFunc()
 				}
 			}
 		}
-		this.EditAliasListIni()
+		return this.EditAliasListIni()
 	}
 
 	EditTapTapIni(_ := "") {
@@ -53,6 +43,7 @@
 		editor := SetUp.dict["Editor"]
 		aliasListIniFile := SetUp.dict["AliasListIniFile"]
 		Run(editor . " " . AliasListIniFile)
+		return ""
 	}
 
 	Run(option) {
