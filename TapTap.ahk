@@ -1,11 +1,14 @@
-﻿; #NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
-#Warn  ; Enable warnings to assist with detecting common errors.
-SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
-SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
-#SingleInstance, Force
-#Persistent
-FileEncoding, UTF-8
+﻿#Warn  ; Enable warnings to assist with detecting common errors.
+SendMode("Input")  ; Recommended for new scripts due to its superior speed and reliability.
+SetWorkingDir(A_ScriptDir)  ; Ensures a consistent starting directory.
+#SingleInstance Force
+Persistent
+FileEncoding("UTF-8")
 
+#Include "AliasList.ahk"
+#Include "SetUp.ahk"
+
+global T_Arb := ""
 global T_ArbEdit := ""
 global T_ArbList := ""
 global T_ArbEnter := ""
@@ -19,7 +22,7 @@ global T_IsInputHighLighting := false
 
 ;@Ahk2Exe-SetMainIcon TapTap.ico
 if (!A_IsCompiled)
-	Menu, Tray, Icon, TapTap.ico	; TapTap Icon
+	TraySetIcon("TapTap.ico")	; TapTap Icon
 
 InitTapTap()
 CreateARB()
@@ -28,11 +31,13 @@ return
 ; CapsLock 키 변경 to LControl by KeyTweak
 ; CapsLock Toggle 키 (CapsLock + 우측 Shift)
 >+LControl::
-SetCapsLockState % !GetKeyState("CapsLock", "T")
-return
+{ ; V1toV2: Added bracket
+SetCapsLockState(!GetKeyState("CapsLock", "T"))
+}
 
 ; 프로그램 함수
-ShowAliasRunBox() {
+; Added bracket before function
+ShowAliasRunBox(_) {
 	if (T_IsArbShowing)
 		return
 	If (A_ThisHotkey = A_PriorHotkey and A_TimeSincePriorHotkey < 350)
@@ -40,59 +45,60 @@ ShowAliasRunBox() {
 }
 
 ARBGuiClose() {
-	MsgBox, ARB Closed Check!
+	MsgBox("ARB Closed Check!")
 }
 
 HideARB() {
-	SetTimer, EscapeArbTimer, off
-	Gui, ARB:Hide
+	SetTimer(EscapeArbTimer, 0)
+	; ARB := Gui()
+	T_Arb.Hide()
 }
 
-ARBGuiEscape() {
+ARBGuiEscape(_) {
 	HideARB()
 	global T_IsArbShowing := false
-	WinActivate , %T_ActiveWinowTitleOnArb%
+	WinActivate(T_ActiveWinowTitleOnArb)
 }
 
 TabProcessTimer() {
 	previousAlias := T_AliasList.previousAlias
 	; GuiControl, , Edit1, % previousAlias	; 안 먹힘
 	; ControlSend, Edit1, {Enter}, % T_TapTapTitle
-	ControlSend, Edit1, {BackSpace}%previousAlias%{Enter}, % T_TapTapTitle
+	ControlSend("{BackSpace}" . previousAlias . "{Enter}", "Edit1", T_TapTapTitle)
 }
 
 TabDeleteTimer() {
-	ControlSend, Edit1, {Backspace}{Enter}, % T_TapTapTitle
+	ControlSend("{Backspace}{Enter}", "Edit1", T_TapTapTitle)
 }
 
 SpaceProcessTimer() {
 	previousAlias := T_AliasList.previousAlias
 	; GuiControl, , Edit1, % previousAlias	; 안 먹힘
-	ControlSend, Edit1, {End}{Space}, % T_TapTapTitle
+	ControlSend("{End}{Space}", "Edit1", T_TapTapTitle)
 }
 
-ARBGuiEditHandler() {
-	global T_IsInputHighLighting
-	Gui, Submit, NoHide
-	arbEdit := T_ArbEdit
+ARBGuiEditHandler(ab, _) {
+	global T_IsInputHighLighting, T_Arb
+	oSaved := T_Arb.Submit(false)
+	arbEdit := T_ArbEdit.value
 
 	; 입력란 하이라이트, Tab, Space 처리
 	if (T_IsInputHighLighting) {
 		T_IsInputHighLighting := false
 		previousAlias := T_AliasList.previousAlias
 		if InStr(arbEdit, A_Space) {
-  			GuiControl, , Edit1, % previousAlias
-			SetTimer, SpaceProcessTimer, -1
+  			T_ArbEdit.Value := previousAlias
+			SetTimer(SpaceProcessTimer, -20)
 			return
 		}
 
 		if InStr(arbEdit, A_Tab) {
 			; GuiControl, , Edit1, % previousAlias
-			SetTimer, TabProcessTimer, -1
+			SetTimer(TabProcessTimer, -20)
 			return
 		}
 	} else if InStr(arbEdit, A_Tab) {
-		SetTimer, TabDeleteTimer, -1
+		SetTimer(TabDeleteTimer, -20)
 		return
 	}
 	; 명령어 옵션을 입력하는 경우를 제외하고, 리스트 Update
@@ -100,12 +106,13 @@ ARBGuiEditHandler() {
 		UpdateListView(arbEdit)
 }
 
-ARBGuiEnterPressed() {
-	Gui, Submit, NoHide
-	arbEdit := T_ArbEdit
+ARBGuiEnterPressed(abc, i) {
+	global T_Arb
+	oSaved := T_Arb.Submit(false)
+	arbEdit := T_ArbEdit.value
 	HideARB()	; ARB 화면 죽인 후, 명령 실행
 	res := T_AliasList.RunAlias(arbEdit)
-	ARBGuiEscape()
+	ARBGuiEscape("_")
 	if InStr(res, "IniChanged") {
 		T_SetUp.MakeDict()
 		SetHotkey()
@@ -113,73 +120,73 @@ ARBGuiEnterPressed() {
 }
 
 ImmediateRunTimer() {
-	ControlSend, Edit1, {Enter}, % T_TapTapTitle
+	ControlSend("{Enter}", "Edit1", T_TapTapTitle)
 }
 
 UpdateListView(alias_) {
 	list := T_AliasList.ListAlias(alias_)
-	length := list.Length()
+	length := list.Length
 	if (length = 0) {
-		GuiControl, -Redraw, T_ArbList
-		LV_Delete()
-		GuiControl, +Redraw, T_ArbList
+		T_ArbList.Opt("-Redraw")
+		T_ArbList.Delete()
+		T_ArbList.Opt("+Redraw")
 		return
 	}
 	if (length = 1 and list[1] = "ImmediateRun") {
-		SetTimer, ImmediateRunTimer, -1
+		SetTimer(ImmediateRunTimer, -20)
 		return
 	}
-	GuiControl, -Redraw, T_ArbList
-	LV_Delete()
+	T_ArbList.Opt("-Redraw")
+	T_ArbList.Delete()
 	For index, val in list
 	{
 		;LV_Insert(1, , val)
-		LV_Add(, val)
+		T_ArbList.Add(, val)
 	}
-	LV_Modify(1, "Select")
-	GuiControl, +Redraw, T_ArbList
+	T_ArbList.Modify(1, "Select")
+	T_ArbList.Opt("+Redraw")
 }
 
 PreviousAliasSendTimer() {
 	previousAlias := T_AliasList.previousAlias
 	if (previousAlias = "") {
-		ControlSend, Edit1, ^a{Space}{BackSpace}, % T_TapTapTitle
+		ControlSend("^a{Space}{BackSpace}", "Edit1", T_TapTapTitle)
 	} else {
-		ControlSend, Edit1, ^a%previousAlias%^a, % T_TapTapTitle
-		T_IsInputHighLighting := true
+		ControlSend("^a" . previousAlias . "^a", "Edit1", T_TapTapTitle)
+		global T_IsInputHighLighting := true
 	}
 }
 
 ShowARB() {
+	global T_ActiveWinowTitleOnArb, T_AliasList
     global T_IsArbShowing := true
+	T_ActiveWinowTitleOnArb := WinGetTitle("A")
 
-	global T_ActiveWinowTitleOnArb
-	WinGetActiveTitle, T_ActiveWinowTitleOnArb
-
-	CoordMode, Mouse, Screen
-	MouseGetPos, mouseX, mouseY
+	CoordMode("Mouse", "Screen")
+	MouseGetPos(&mouseX, &mouseY)
 	posX := mouseX
 	posY := mouseY
 	if (A_ScreenWidth < mouseX + 410)
 		posX := A_ScreenWidth - 410
 	if (A_ScreenHeight < mouseY + 220)
 		posY := A_ScreenHeight - 220
-	Gui, ARB:Show, X%posX% Y%posY%
+	T_Arb.Show("X" . posX . " Y" . posY)
 
 	mouseX := posX + 100
 	mouseY := posY + 15
-	MouseMove, mouseX, mouseY
+	MouseMove("mouseX", "mouseY")
 
 	; SetTimer, PreviousAliasSendTimer, -10
-	previousAlias := T_AliasList.previousAlias
+	; previousAlias := T_AliasList.previousAlias
+	previousAlias := AliasList.previousAlias
 	if (previousAlias = "") {
-		ControlSend, Edit1, ^a{Space}{BackSpace}, % T_TapTapTitle
+		ControlSend("^a{Space}{BackSpace}", "Edit1", T_TapTapTitle)
 	} else {
-		ControlSend, Edit1, ^a%previousAlias%^a, % T_TapTapTitle
-		T_IsInputHighLighting := true
+		ControlSend("^a" . previousAlias . "^a", "Edit1", T_TapTapTitle)
+		global T_IsInputHighLighting := true
 	}
 
-	SetTimer, EscapeArbTimer, 1000
+	SetTimer(EscapeArbTimer,1000)
 }
 
 EscapeArbTimer() {
@@ -188,21 +195,33 @@ EscapeArbTimer() {
 	}
 
 	global T_ActiveWinowTitleOnArb
-	WinGetActiveTitle, T_ActiveWinowTitleOnArb
+	T_ActiveWinowTitleOnArb := WinGetTitle("A")
 
-	ControlSend, Edit1, {Escape}, % T_TapTapTitle
+	ControlSend("{Escape}", "Edit1", T_TapTapTitle)
 }
-
+T_ArbEdit_Click(abc, info) {
+	a := T_ArbEdit.value
+}
+T_ArbEdit_Change(abc, info) {
+	a := T_ArbEdit.value
+}
+Ctrl_Click(T_ArbEnter, info) {
+	b := 3
+}
 CreateARB() {
-	Gui, ARB:New, +AlwaysOnTop -Caption +ToolWindow, % T_TapTapTitle
-	Gui, ARB:Font, S18 W1000, 나눔고딕
-	Gui, ARB:Margin, 1, 1
-	Gui, ARB:Add, Edit, w320 r1 WantTab vT_ArbEdit gARBGuiEditHandler
+	global T_Arb := Gui(, T_TapTapTitle)
+	T_Arb.Opt("+AlwaysOnTop -Caption +ToolWindow")
+	T_Arb.SetFont("S18 W1000", "나눔고딕")
+	T_Arb.MarginX := "1", T_Arb.MarginY := "1"
+	global T_ArbEdit := T_Arb.Add("Edit", "w320 r1 WantTab vT_ArbEdit")
+	T_ArbEdit.OnEvent("Change", ARBGuiEditHandler)
 
-	Gui, ARB:Font, S12 W800, 나눔고딕
-	Gui, ARB:Margin, 1, 1
-	Gui, ARB:Add, ListView, R6 wp -Hdr ReadOnly vT_ArbList, 1
-	Gui, ARB:Add, Button, x-10 y-10 w1 h1 +default Hidden vT_ArbEnter gARBGuiEnterPressed	; Default Button Hidden
+	T_Arb.SetFont("S12 W800", "나눔고딕")
+	T_Arb.MarginX := "1", T_Arb.MarginY := "1"
+	global T_ArbList := T_Arb.Add("ListView", "R6 wp -Hdr ReadOnly vT_ArbList", ["1"])
+	global T_ArbEnter := T_Arb.Add("Button", "x-10 y-10 w1 h1 +default Hidden vT_ArbEnter")
+	T_ArbEnter.OnEvent("Click", ARBGuiEnterPressed)	; Default Button Hidden
+	T_Arb.OnEvent("Escape", ARBGuiEscape)
 }
 
 InitTapTap() {
@@ -214,10 +233,10 @@ InitTapTap() {
 
 	CopyInitFiles()
 
-	T_SetUp := new SetUp()
+	global T_SetUp := SetUp()
 	SetHotkey()
 
-	global T_AliasList := new AliasList()
+	global T_AliasList := AliasList()
 	T_AliasList.RunOnBoot()
 
 	; 탭탭이(TapTap) ARB 기동 용 핫키 지정
@@ -227,21 +246,21 @@ InitTapTap() {
 SetHotkey() {
 	try {
 		if (SetUp.dict and SetUp.newDict and SetUp.dict["Hotkey"] != SetUp.newDict["Hotkey"]) {
-			Hotkey, % SetUp.dict["Hotkey"], ShowAliasRunBox, Off
+			Hotkey(SetUp.dict["Hotkey"], ShowAliasRunBox, "Off")
 		} else if (!SetUp.dict or (SetUp.newDict and SetUp.dict["Hotkey"] != SetUp.newDict["Hotkey"])) {
-			Hotkey, % SetUp.newDict["Hotkey"], ShowAliasRunBox, On
+			Hotkey(SetUp.newDict["Hotkey"], ShowAliasRunBox, "On")
 		}
 		if (SetUp.newDict) {
 			SetUp.dict := SetUp.newDict
 			SetUp.newDict := ""
 		}
-	} catch e {
-		MsgBox, 16, 탭탭이 핫키 설정, %e%
+	} catch Error as e {
+		MsgBox(e.Message, , 16)
 		if (!SetUp.dict) {
 			ExitApp
 		}
 	}
-	Hotkey, % SetUp.dict["Hotkey"], ShowAliasRunBox, On
+	Hotkey(SetUp.dict["Hotkey"], ShowAliasRunBox, "On")
 }
 
 ; FileInstall Bug : Source File이 %A_WorkingDir% 이외의 곳에 있으면,
@@ -250,38 +269,38 @@ CopyInitFiles() {
 	; 필수 파일
 	destFile := A_WorkingDir . "\Lib\_SetUp\AutoHotkey.exe"
 	if !FileExist(destFile)  {
-		FileInstall, AutoHotkey.v1.1.33.10_U64.bin, %destFile%, 0
+		FileInstall("AutoHotkey.v1.1.33.10_U64.bin", destFile, 0)
 	}
 	; 예제 파일
 	destFile := A_WorkingDir . "\Lib\AHK\ShortCut_1.ahk"
 	if !FileExist(destFile) {
-		FileInstall, ShortCut_1.ahk.Org, %destFile%, 0
+		FileInstall("ShortCut_1.ahk.Org", destFile, 0)
 	}
 	destFile := A_WorkingDir . "\Lib\AHK\ShortCut_Etc.ahk"
 	if !FileExist(destFile) {
-		FileInstall, ShortCut_Etc.ahk.Org, %destFile%, 0
+		FileInstall("ShortCut_Etc.ahk.Org", destFile, 0)
 	}
 	destFile := A_WorkingDir . "\Lib\AHK\ShortCut_Help.ahk"
 	if !FileExist(destFile) {
-		FileInstall, ShortCut_Help.ahk.Org, %destFile%, 0
+		FileInstall("ShortCut_Help.ahk.Org", destFile, 0)
 	}
 	destFile := A_WorkingDir . "\Lib\AHK\ScreenSaver.ahk"
 	if !FileExist(destFile) {
-		FileInstall, ScreenSaver.ahk.Org, %destFile%, 0
+		FileInstall("ScreenSaver.ahk.Org", destFile, 0)
 	}
 	destFile := A_WorkingDir . "\Lib\AHK\WifeWatch.ahk"
 	if !FileExist(destFile) {
-		FileInstall, WifeWatch.ahk.Org, %destFile%, 0
+		FileInstall("WifeWatch.ahk.Org", destFile, 0)
 	}
 	destFile := A_WorkingDir . "\Lib\AHK\TapTap_Boot.ahk"
 	if !FileExist(destFile) {
-		FileInstall, TapTap_Boot.ahk.Org, %destFile%, 0
+		FileInstall("TapTap_Boot.ahk.Org", destFile, 0)
 	}
 	; 소스 파일
-	destFile := A_WorkingDir . "\Src.zip"
-	if !FileExist(destFile) {
-		FileInstall, Src.zip, %destFile%, 0
-	}
+	; destFile := A_WorkingDir . "\Src.zip"
+	; if !FileExist(destFile) {
+	; 	FileInstall("Src.zip", destFile, 0)
+	; }
 	; TapTap.ahk
 	; TapTap.ico
 	; AliasList.ahk
@@ -292,9 +311,6 @@ CopyInitFiles() {
 
 CreateFolder(folder) {
 	if !FileExist(folder) {
-		FileCreateDir, %folder%
+		DirCreate(folder)
 	}
 }
-
-#Include, AliasList.ahk
-#Include, SetUp.ahk

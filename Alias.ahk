@@ -2,23 +2,23 @@
 	static lowerCase := "abcdefghijklmnopqrstuvwxyz."
 
 	QuitTapTap(_) {
-		this.DoBeforeQuit()
+		; this.DoBeforeQuit()
 		ExitApp
 	}
 
 	ReloadTapTap(_) {
-		this.DoBeforeQuit()
+		; this.DoBeforeQuit()
 		Reload
 	}
 
 	DoBeforeQuit(_) {
-		ShortCut := T_SetUp.dict["ShortCut"]
-		Hotkey, %ShortCut%, ShowAliasRunBox, Off
-		T_SetUp.WriteSetUpFile()
+		ShortCut := SetUp.dict["Hotkey"]
+		Hotkey(ShortCut, ShowAliasRunBox, "Off")
+		SetUp.WriteSetUpFile()
 	}
 
 	EditIni(option) {
-		editor := T_SetUp.dict["Editor"]
+		editor := SetUp.dict["Editor"]
 		options := ["AliasList", "Ini"]
 		builtIns := ["EditAliasListIni", "EditTapTapIni"]
 		iniFile := ""
@@ -43,16 +43,16 @@
 	}
 
 	EditTapTapIni(_ := "") {
-		editor := T_SetUp.dict["Editor"]
-		tapTapIniFile := T_SetUp.dict["TapTapIniFile"]
-		RunWait, %editor% %tapTapIniFile%
+		editor := SetUp.dict["Editor"]
+		tapTapIniFile := SetUp.dict["TapTapIniFile"]
+		RunWait(editor . " " . tapTapIniFile)
 		return "IniChanged"
 	}
 
 	EditAliasListIni(_ := "") {
-		editor := T_SetUp.dict["Editor"]
-		aliasListIniFile := T_SetUp.dict["AliasListIniFile"]
-		Run, Target [, WorkingDir, Max|Min|Hide|UseErrorLevel, OutputVarPID], %editor% %AliasListIniFile%
+		editor := SetUp.dict["Editor"]
+		aliasListIniFile := SetUp.dict["AliasListIniFile"]
+		Run(editor . " " . AliasListIniFile)
 	}
 
 	Run(option) {
@@ -68,15 +68,15 @@
 		try {
 			if (aliasType = "BuiltIn") {
 				builtInFunc := ObjBindMethod(this, command)
-				res := "BuiltIn" . %builtInFunc%(option)
+				res := "BuiltIn" . builtInFunc(option)
 			} else if (aliasType = "ShortCut") {
-				Run, %command% %defaultOption%, %workingDir%
+				Run(command . " " . defaultOption, workingDir)
 				res := "ShortCut"
 			} else if (aliasType = "Etc") {
-				Run, %command% %option% %defaultOption%, %workingDir%
+				Run(command . " " . option . " " . defaultOption, workingDir)
 				res := "Ok"
 			} else {
-				Run, %command% %option% %defaultOption%, %workingDir%
+				Run(command . " " . option . " " . defaultOption, workingDir)
 				res := "Ok"
 			}
 			; if (aliasType = "Run") {
@@ -93,13 +93,13 @@
 
 			; }
 			return res
-		} catch e {
+		} catch Error as e {
 			msg := "명령어 타입: " . aliasType . "`n"
 			msg .= "명령어: " . command . "`n"
 			msg .= "옵션: " . option . defaultOption . "`n"
 			msg .= "작업 폴더: " . workingDir . "`n"
-			msg .= e
-			MsgBox, 16, "별칭 명령 실행 에러", %msg%
+			msg .= e.Message
+			MsgBox(msg, , 16)
 			return "Error"
 		}
 	}
@@ -114,7 +114,11 @@
 		aliasIndex := 0
 		For index, value in this.Aliases
 		{
-			pos := InStr(value, alias_)	; alias가 "" 이면, 항상 1 반환
+			if (alias_ = "") {
+				pos := 1
+			} else {
+				pos := InStr(value, alias_)	; alias가 "" 이면, 항상 1 반환
+			}
 			if (pos != 0 and (aliasIndex = 0 || pos < aliasIndex))
 				aliasIndex := pos
 			if (pos = 1)
@@ -163,17 +167,25 @@
 		this.aliases := this.GetArrayFromString(aliasLine)
 
 		typeArray := this.GetArrayFromString(typeLine)
-		if (typeArray.Length()) {
+		if (typeArray.Length) {
 			this.command := Trim(typeArray.RemoveAt(1))
+		} else {
+			this.command := ""
 		}
-		if (typeArray.Length()) {
+		if (typeArray.Length) {
 			this.option := Trim(typeArray.RemoveAt(1))
+		} else {
+			this.option := ""
 		}
-		if (typeArray.Length()) {
+		if (typeArray.Length) {
 			this.workingDir := Trim(typeArray.RemoveAt(1))
+		} else {
+			this.workingDir := ""
 		}
-		if (typeArray.Length()) {
+		if (typeArray.Length) {
 			this.winTitle := Trim(typeArray.RemoveAt(1))
+		} else {
+			this.winTitle := ""
 		}
 
 		; if (this.workingDir or this.winTitle) {
@@ -186,7 +198,7 @@
 		; 	MsgBox, %msg%
 		; }
 	}
-	i_New(comment:="", aliases:="", aliasType:="", command ="", option:= "", workingDir:="", showCmd:="", winTitle:="", mainMenu:= "", mainIndex:="", subMenu:="", subIndex:="") {
+	i_New(comment:="", aliases:="", aliasType:="", command :="", option:= "", workingDir:="", showCmd:="", winTitle:="", mainMenu:= "", mainIndex:="", subMenu:="", subIndex:="") {
 		this.comment := comment
 		this.aliases := this.GetArrayFromString(aliases)
 		this.aliasType := aliasType
