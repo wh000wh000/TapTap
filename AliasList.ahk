@@ -5,7 +5,7 @@ Class AliasList {
 	static previousAlias := ""
 	static aliasIndex := 0	; 선택하는 Alias의 AliasList 배열에서의 index
 	static aliasId := 0
-	static aliasListFile := "Lib\_SetUp\TapTap.AliasList"
+	static aliasListFile := A_WorkingDir . "\Lib\_SetUp\AliasList.ini"
 	static onBootAlias := ""
 
 	__New() {
@@ -70,7 +70,7 @@ Class AliasList {
 		aliasIndex := AliasList.aliasIndex
 		if (AliasList.aliasIndex != 0) {
 			res := AliasList.aliasList[AliasList.aliasIndex].Run(option)
-			if (res = "Ok") {
+			if InStr(res, "Ok") {
 				AliasList.previousAlias := command
 			} else {
 				AliasList.previousAlias	:= ""
@@ -78,11 +78,16 @@ Class AliasList {
 		} else {
 			AliasList.previousAlias	:= ""
 		}
+		return res
 	}
 
 	MakeList() {
-		; ini 날짜 비교, ini 파일 수정 시만 새로 List 작업
+		; ini 파일 생성
 		aliasListFile := AliasList.aliasListFile
+		if !FileExist(aliasListFile) {
+			FileInstall, AliasList.ini.Default, %aliasListFile%, 0
+		}
+		; ini 날짜 비교, ini 파일 수정 시만 새로 List 작업
 		FileGetTime, fileTime , % aliasListFile, M
 		if (AliasList.modificationTime = fileTime) {
 			return

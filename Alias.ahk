@@ -1,22 +1,58 @@
 ﻿class Alias {
 	static lowerCase := "abcdefghijklmnopqrstuvwxyz."
 
-	; 탭탭이 종료
-	; BuiltIn 'Q'키
-	BuiltInQuit() {
-		hotkey := T_SetUp.dict["Hotkey"]
-		Hotkey, %hotkey%, ShowAliasRunBox, Off
-		T_SetUp.WriteSetUpFile()
+	QuitTapTap(_) {
+		this.DoBeforeQuit()
 		ExitApp
 	}
 
-	; 탭탭이 재 실행
-	; 'R'키 Hotkey
-	BuiltInReload() {
-		hotkey := T_SetUp.dict["Hotkey"]
-		Hotkey, %hotkey%, ShowAliasRunBox, Off
-		T_SetUp.WriteSetUpFile()
+	ReloadTapTap(_) {
+		this.DoBeforeQuit()
 		Reload
+	}
+
+	DoBeforeQuit(_) {
+		ShortCut := T_SetUp.dict["ShortCut"]
+		Hotkey, %ShortCut%, ShowAliasRunBox, Off
+		T_SetUp.WriteSetUpFile()
+	}
+
+	EditIni(option) {
+		editor := T_SetUp.dict["Editor"]
+		options := ["AliasList", "Ini"]
+		builtIns := ["EditAliasListIni", "EditTapTapIni"]
+		iniFile := ""
+		if (StrLen(option) = 1) {
+			for index, value in options {
+				if InStr(value, option, true) {
+					builtInFunc := ObjBindMethod(this, builtIns[index])
+					%builtInFunc%()
+					return
+				}
+			}
+		} else if (option) {
+			for index, value in options {
+				if InStr(value, option) {
+					builtInFunc := ObjBindMethod(this, builtIns[index])
+					%builtInFunc%()
+					return
+				}
+			}
+		}
+		this.EditAliasListIni()
+	}
+
+	EditTapTapIni(_ := "") {
+		editor := T_SetUp.dict["Editor"]
+		tapTapIniFile := T_SetUp.dict["TapTapIniFile"]
+		RunWait, %editor% %tapTapIniFile%
+		return "IniChanged"
+	}
+
+	EditAliasListIni(_ := "") {
+		editor := T_SetUp.dict["Editor"]
+		aliasListIniFile := T_SetUp.dict["AliasListIniFile"]
+		Run, Target [, WorkingDir, Max|Min|Hide|UseErrorLevel, OutputVarPID], %editor% %AliasListIniFile%
 	}
 
 	Run(option) {
@@ -25,19 +61,20 @@
 		command := this.command
 		defaultOption := this.option
 		workingDir := this.workingDir
+		res := ""
 		try {
 			if (aliasType = "BuiltIn") {
-				func := "BuiltIn" . command
-				builtInFunc := ObjBindMethod(this, func)
-				%builtInFunc%()
-				return "BuiltIn"
-			} else if (aliasType = "Hotkey") {
+				builtInFunc := ObjBindMethod(this, command)
+				res := "BuiltIn" . %builtInFunc%(option)
+			} else if (aliasType = "ShortCut") {
 				Run, %command% %defaultOption%, %workingDir%
-				return "Hotkey"
+				res := "ShortCut"
 			} else if (aliasType = "Etc") {
 				Run, %command% %option% %defaultOption%, %workingDir%
+				res := "Ok"
 			} else {
 				Run, %command% %option% %defaultOption%, %workingDir%
+				res := "Ok"
 			}
 			; if (aliasType = "Run") {
 			; 	Run, % command " " option, % workingDir
@@ -52,7 +89,7 @@
 			; } else if (aliasType = "Etc") {
 
 			; }
-			return "Ok"
+			return res
 		} catch e {
 			msg := "명령어 타입: " . aliasType . "`n"
 			msg .= "명령어: " . command . "`n"
@@ -66,7 +103,7 @@
 
 	CheckAlias(alias_) {
 		; 즉각 실행 명령
-		if ((this.aliasType = "Hotkey" or this.aliasType = "BuiltIn") and alias_ != "") {
+		if ((this.aliasType = "ShortCut" or this.aliasType = "BuiltIn") and alias_ != "") {
 			if (StrLen(alias_) = 1 and !InStr(Alias.lowerCase, alias_, true) and SubStr(this.aliases[1], 1, 1) == alias_)	; CaseSensitive
 				return "ImmediateRun"
 		}
