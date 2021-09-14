@@ -46,7 +46,7 @@
 #        이런 명령을 "별칭 명령어 상자"에서 사용할 경우, Etc 타입이 됨.
 #        참고로, 아래의 "calculator" 별칭은 "Run" 타입이므로 경우에 따라,
 #        "c" 라는 문자 단 1 문자 만으로도 실행이 가능하다는 점에서 "Etc" 타입과 차이가 있음.
-#    Hotkey: 특수한 키들의 조합으로 프로그램을 실행하는 유형.
+#    ShortCut: 특수한 키들의 조합으로 프로그램을 실행하는 유형.
 #        Shift 키, Control 키, Alt 키, Function 키, Window 키 등의 조합이 가능함.
 # 명령어 옵션(Option): 명령어에 지정한 프로그램을 실행할 때 제공할 옵션.
 #        "별칭 명령어 상자(ARB)"에서 옵션을 제공할 경우에는, command에 제공된 옵션은 무시됨.
@@ -81,7 +81,7 @@
 #        <Folder> Folder    # 폴더 열기
 #        <Site> Web Site    # Web Site, Home Page 열기.
 #        <Etc>  # 적당한 Alias Type이 없는 경우 지정 -> 우선 [Option] 에 대해 폴더 열기로 동작.
-#        [대문자 혹은 숫자] 1 글자 # ARB 실행 시, Hotkey로 사용.
+#        [대문자 혹은 숫자] 1 글자 # ARB 실행 시, ShortCut로 사용.
 #        ? # 도움말 화면 보이기
 #
 #<Alias> aliasName, an 별칭, 별명
@@ -94,12 +94,12 @@
 # 주석 란: 어떤 내용을 적어도 무시되는 줄(Line)
 # 탭탭이에서 사용하는 명령어(Alias)를 명령어 종류 별로 구분하여 보여 줌.
 <Alias> ? 탭탭이 별칭(별명, Alias) 목록
-<Hotkey> z:\Workspace\TapTap\Lib\AHK\Hotkey_Help.ahk
+<ShortCut> z:\Workspace\TapTap\Lib\AHK\ShortCut_Help.ahk
 
-# 숫자 Hotkey 테스트
+# 숫자 ShortCut 테스트
 # 숫자 1을 누르면 탭탭이가 인사함.
 <Alias> 1, 인사하기
-<Hotkey> c:\Program Files\AutoHotkey\AutoHotkey.exe /CP65001, z:\Workspace\TapTap\Lib\AHK\Hotkey_1.ahk
+<ShortCut> c:\Program Files\AutoHotkey\AutoHotkey.exe /CP65001, z:\Workspace\TapTap\Lib\AHK\ShortCut_1.ahk
 # 파일 탐색기를 이용하여 현재 폴더 화면을 보여줌.
 <Alias> . 현재 폴더 열기
 <Folder> .
@@ -111,10 +111,16 @@
 <Run> calc
 <Alias> cmd, command 도스 명령 창
 <Run> C:\Windows\system32\cmd.exe, Z:\
+<Alias> edit [AliasList, Ini] 탭탭이 설정 파일 편집
+<BuiltIn> EditIni
+<Alias> edit4, e4, 탭탭이 AliasList.ini 파일 편집
+<BuiltIn> EditAliasListIni
+<Alias> edit5, e5, 탭탭이 TapTap.ini 파일 편집
+<BuiltIn> EditTapTapIni
 <Alias> Q, 탭탭이 종료
-<BuiltIn> Quit
+<BuiltIn> QuitTapTap
 <Alias> R, 탭탭이 재 실행
-<BuiltIn> Reload
+<BuiltIn> ReloadTapTap
 <Alias> www [], 크롬
 <Run> www.google.co.kr
 # Etc 타입은 명령어 작성란에 어떤 내용을 적어도 전혀 저장되지 않음.

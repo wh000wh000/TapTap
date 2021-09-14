@@ -17,6 +17,10 @@ global T_ActiveWinowTitleOnArb := ""
 global T_IsArbShowing := false
 global T_IsInputHighLighting := false
 
+;@Ahk2Exe-SetMainIcon TapTap.ico
+if (!A_IsCompiled)
+	Menu, Tray, Icon, TapTap.ico	; TapTap Icon
+
 InitTapTap()
 CreateARB()
 return
@@ -31,10 +35,6 @@ return
 ShowAliasRunBox() {
 	if (T_IsArbShowing)
 		return
-	if IsHotkeyChanged() {
-		ResetHotkey()
-		return
-	}
 	If (A_ThisHotkey = A_PriorHotkey and A_TimeSincePriorHotkey < 350)
 		ShowARB()
 }
@@ -104,8 +104,12 @@ ARBGuiEnterPressed() {
 	Gui, Submit, NoHide
 	arbEdit := T_ArbEdit
 	HideARB()	; ARB 화면 죽인 후, 명령 실행
-	T_AliasList.RunAlias(arbEdit)
+	res := T_AliasList.RunAlias(arbEdit)
 	ARBGuiEscape()
+	if InStr(res, "IniChanged") {
+		T_SetUp.MakeDict()
+		SetHotkey()
+	}
 }
 
 ImmediateRunTimer() {
@@ -209,31 +213,34 @@ InitTapTap() {
 
 	CopyInitFiles()
 
+	T_SetUp := new SetUp()
+	SetHotkey()
+
 	global T_AliasList := new AliasList()
 	T_AliasList.RunOnBoot()
 
 	; 탭탭이(TapTap) ARB 기동 용 핫키 지정
-	SetHotkey()
-}
-
-IsHotkeyChanged() {
-	if (T_Hotkey != "" and T_Hotkey != T_SetUp.GetValue("Hotkey"))
-		return true
-	else
-		return false
-}
-
-ResetHotkey() {
-	global T_Hotkey
-	Hotkey, %T_Hotkey%, ShowAliasRunBox, Off
-	global T_Hotkey := T_SetUp.GetValue("Hotkey")
-	Hotkey, %T_Hotkey%, ShowAliasRunBox
+	; SetHotkey()
 }
 
 SetHotkey() {
-	global T_SetUp := new SetUp()
-	global T_Hotkey := T_SetUp.GetValue("Hotkey")
-	Hotkey, %T_Hotkey%, ShowAliasRunBox
+	try {
+		if (SetUp.dict and SetUp.newDict and SetUp.dict["Hotkey"] != SetUp.newDict["Hotkey"]) {
+			Hotkey, % SetUp.dict["Hotkey"], ShowAliasRunBox, Off
+		} else if (!SetUp.dict or (SetUp.newDict and SetUp.dict["Hotkey"] != SetUp.newDict["Hotkey"])) {
+			Hotkey, % SetUp.newDict["Hotkey"], ShowAliasRunBox, On
+		}
+		if (SetUp.newDict) {
+			SetUp.dict := SetUp.newDict
+			SetUp.newDict := ""
+		}
+	} catch e {
+		MsgBox, 16, 탭탭이 핫키 설정, %e%
+		if (!SetUp.dict) {
+			ExitApp
+		}
+	}
+	Hotkey, % SetUp.dict["Hotkey"], ShowAliasRunBox, On
 }
 
 ; FileInstall Bug : Source File이 %A_WorkingDir% 이외의 곳에 있으면,
@@ -242,40 +249,40 @@ CopyInitFiles() {
 	; 필수 파일
 	destFile := A_WorkingDir . "\Lib\_SetUp\AutoHotkey.exe"
 	if !FileExist(destFile)  {
-		FileInstall, AutoHotkey.exe, %destFile%, 0
+		FileInstall, AutoHotkey.v1.1.33.10_U64.bin, %destFile%, 0
 	}
-	destFile := A_WorkingDir . "\Lib\_SetUp\TapTap.SetUp"
-	if !FileExist(destFile) {
-		FileInstall, TapTap.SetUp, %destFile%, 0
-	}
-	destFile := A_WorkingDir . "\Lib\_SetUp\TapTap.AliasList"
-	if !FileExist(destFile) {
-		FileInstall, TapTap.AliasList.Org, %destFile%, 0
-	}
+	; destFile := A_WorkingDir . "\Lib\_SetUp\TapTap.ini"
+	; if !FileExist(destFile) {
+	; 	FileInstall, TapTap.ini.Default, %destFile%, 0
+	; }
+	; destFile := A_WorkingDir . "\Lib\_SetUp\AliasList.ini"
+	; if !FileExist(destFile) {
+	; 	FileInstall, AliasList.ini.Default, %destFile%, 0
+	; }
 	; 예제 파일
-	destFile := A_WorkingDir . "\Lib\AHK\Hotkey_1.ahk"
+	destFile := A_WorkingDir . "\Lib\AHK\ShortCut_1.ahk"
 	if !FileExist(destFile) {
-		FileInstall, Hotkey_1.Org, %destFile%, 0
+		FileInstall, ShortCut_1.ahk.Org, %destFile%, 0
 	}
-	destFile := A_WorkingDir . "\Lib\AHK\Hotkey_Etc.ahk"
+	destFile := A_WorkingDir . "\Lib\AHK\ShortCut_Etc.ahk"
 	if !FileExist(destFile) {
-		FileInstall, Hotkey_Etc.Org, %destFile%, 0
+		FileInstall, ShortCut_Etc.ahk.Org, %destFile%, 0
 	}
-	destFile := A_WorkingDir . "\Lib\AHK\Hotkey_Help.ahk"
+	destFile := A_WorkingDir . "\Lib\AHK\ShortCut_Help.ahk"
 	if !FileExist(destFile) {
-		FileInstall, Hotkey_Help.Org, %destFile%, 0
+		FileInstall, ShortCut_Help.ahk.Org, %destFile%, 0
 	}
 	destFile := A_WorkingDir . "\Lib\AHK\ScreenSaver.ahk"
 	if !FileExist(destFile) {
-		FileInstall, ScreenSaver.Org, %destFile%, 0
+		FileInstall, ScreenSaver.ahk.Org, %destFile%, 0
 	}
 	destFile := A_WorkingDir . "\Lib\AHK\WifeWatch.ahk"
 	if !FileExist(destFile) {
-		FileInstall, WifeWatch.Org, %destFile%, 0
+		FileInstall, WifeWatch.ahk.Org, %destFile%, 0
 	}
 	destFile := A_WorkingDir . "\Lib\AHK\TapTap_Boot.ahk"
 	if !FileExist(destFile) {
-		FileInstall, TapTap_Boot.Org, %destFile%, 0
+		FileInstall, TapTap_Boot.ahk.Org, %destFile%, 0
 	}
 }
 
