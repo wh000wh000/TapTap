@@ -100,35 +100,39 @@ Class AliasList {
 			aliasLine := ""
 			aliasType := ""
 			typeLine := ""
-			isAliasParsing := true
+			isAliasParsing := false
+			parsingStage := 0
 			Loop, read, %aliasListFile%
 			{
 				if (Trim(A_LoopReadLine) = "" or InStr(A_LoopReadLine, "#"))	; '#'을 포함한 줄은 모두 제거
 					continue
-				if (isAliasParsing and InStr(A_LoopReadLine, "<Alias>")) {
+				if (!isAliasParsing and InStr(A_LoopReadLine, "<Alias>")) {
 					pos := InStr(A_LoopReadLine, ">")
 					aliasLine := Trim(SubStr(A_LoopReadLine, pos + 1))
-				} else if (!isAliasParsing and RegExMatch(A_LoopReadLine, "i)<[a-z]+>") and !InStr(A_LoopReadLine, "<Alias>")) {
+					parsingStage := 1
+				} else if (!isAliasParsing and InStr(A_LoopReadLine, "<OnBoot>")) {
+					parsingStage := 2
+				} else if ((!isAliasParsing and RegExMatch(A_LoopReadLine, "i)<[a-z]+>"))
+					and !InStr(A_LoopReadLine, "<Alias>") and !InStr(A_LoopReadLine, "<OnBoot>")) {
 					left := InStr(A_LoopReadLine, "<")
 					right := InStr(A_LoopReadLine, ">")
 					aliasType := Trim(SubStr(A_LoopReadLine, left + 1, right - left - 1))
 					typeLine := Trim(SubStr(A_LoopReadLine, right + 1))
+					isAliasParsing := true
 				} else {
 					Throw, "별칭 명령어 구문 해석 실패"
 				}
-				if (isAliasParsing) {
-					isAliasParsing := false
+				if (!isAliasParsing)
 					continue
-				} else {
-					isAliasParsing := true
-				}
+
 				alias_ := new Alias(aliasType, aliasLine, typeLine)
-				if (alias_.aliasType = "OnBoot") {
-					AliasList.onBootAlias := alias_
-				} else {
+				if (parsingStage = 1) {
 					aliasList_.push(alias_)
+				} else if (parsingStage = 2) {
+					AliasList.onBootAlias := alias_
 				}
-				isAliasParsing := true
+				isAliasParsing := false
+				parsingStage := 0
 			}
 			AliasList.aliasList := aliasList_
 		} catch e {
