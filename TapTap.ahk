@@ -210,6 +210,7 @@ InitTapTap() {
 	CreateFolder(A_WorkingDir . "\Lib\_SetUp")
 	CreateFolder(A_WorkingDir . "\Lib\AHK")
 	CreateFolder(A_WorkingDir . "\Lib\Python")
+	; CreateFolder(A_WorkingDir . "\Src")
 
 	CopyInitFiles()
 
@@ -251,14 +252,6 @@ CopyInitFiles() {
 	if !FileExist(destFile)  {
 		FileInstall, AutoHotkey.v1.1.33.10_U64.bin, %destFile%, 0
 	}
-	; destFile := A_WorkingDir . "\Lib\_SetUp\TapTap.ini"
-	; if !FileExist(destFile) {
-	; 	FileInstall, TapTap.ini.Default, %destFile%, 0
-	; }
-	; destFile := A_WorkingDir . "\Lib\_SetUp\AliasList.ini"
-	; if !FileExist(destFile) {
-	; 	FileInstall, AliasList.ini.Default, %destFile%, 0
-	; }
 	; 예제 파일
 	destFile := A_WorkingDir . "\Lib\AHK\ShortCut_1.ahk"
 	if !FileExist(destFile) {
@@ -284,6 +277,17 @@ CopyInitFiles() {
 	if !FileExist(destFile) {
 		FileInstall, TapTap_Boot.ahk.Org, %destFile%, 0
 	}
+	; 소스 파일
+	destFile := A_WorkingDir . "\Src.zip"
+	if !FileExist(destFile) {
+		FileInstall, Src.zip, %destFile%, 0
+	}
+	; TapTap.ahk
+	; TapTap.ico
+	; AliasList.ahk
+	; Alias.ahk
+	; SetUp.ahk
+	; README.md
 }
 
 CreateFolder(folder) {
