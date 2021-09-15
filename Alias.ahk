@@ -54,7 +54,7 @@
 		workingDir := this.workingDir
 		res := ""
 		if (aliasType != "BuiltIn" and StrLen(command) > 4 and SubStr(command, StrLen(command) - 3) = ".ahk") {
-			command := A_WorkingDir . "\" . SetUp.dict["AutoHotkey"] . " /CP65001 " . A_WorkingDir . "\" . command
+			command := A_WorkingDir . "\" . SetUp.Get("AutoHotkey") . " /CP65001 " . A_WorkingDir . "\" . command
 		}
 		try {
 			if (aliasType = "BuiltIn") {

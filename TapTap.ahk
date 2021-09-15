@@ -5,15 +5,15 @@ SetWorkingDir(A_ScriptDir)  ; Ensures a consistent starting directory.
 Persistent
 FileEncoding("UTF-8")
 
-#Include "AliasList.ahk"
 #Include "SetUp.ahk"
+#Include "AliasList.ahk"
 
 global T_Arb := ""
 global T_ArbEdit := ""
 global T_ArbList := ""
 global T_ArbEnter := ""
 global T_AliasList := ""
-global T_SetUp := ""
+; global T_SetUp := ""
 global T_Hotkey := ""
 global T_TapTapTitle := "ARB_TapTap"
 global T_ActiveWindowOnArb := ""
@@ -116,7 +116,6 @@ ARBGuiEnterPressed(abc, i) {
 	res := T_AliasList.RunAlias(arbEdit)
 	ARBGuiEscape("_")
 	if InStr(res, "IniChanged") {
-		T_SetUp.MakeDict()
 		SetHotkey()
 	}
 }
@@ -243,7 +242,7 @@ InitTapTap() {
 
 	CopyInitFiles()
 
-	global T_SetUp := SetUp()
+	; global T_SetUp := SetUp()
 	SetHotkey()
 
 	global T_AliasList := AliasList()
@@ -255,22 +254,29 @@ InitTapTap() {
 
 SetHotkey() {
 	try {
-		if (SetUp.dict and SetUp.newDict and SetUp.dict["Hotkey"] != SetUp.newDict["Hotkey"]) {
-			Hotkey(SetUp.dict["Hotkey"], ShowAliasRunBox, "Off")
-		} else if (!SetUp.dict or (SetUp.newDict and SetUp.dict["Hotkey"] != SetUp.newDict["Hotkey"])) {
-			Hotkey(SetUp.newDict["Hotkey"], ShowAliasRunBox, "On")
+		global T_Hotkey
+		hotkey_ := SetUp.Get("hotkey")
+		if (T_Hotkey and hotkey_ != T_Hotkey) {
+			Hotkey(T_Hotkey, ShowAliasRunBox, "Off")
 		}
-		if (SetUp.newDict) {
-			SetUp.dict := SetUp.newDict
-			SetUp.newDict := ""
+		if (!T_Hotkey or hotkey_ != T_Hotkey) {
+			Hotkey(hotkey_, ShowAliasRunBox, "On")
 		}
+
+		; if (SetUp.dict and SetUp.newDict and SetUp.dict["Hotkey"] != SetUp.newDict["Hotkey"]) {
+		; 	Hotkey(SetUp.dict["Hotkey"], ShowAliasRunBox, "Off")
+		; } else if (!SetUp.dict or (SetUp.newDict and SetUp.dict["Hotkey"] != SetUp.newDict["Hotkey"])) {
+		; 	Hotkey(SetUp.newDict["Hotkey"], ShowAliasRunBox, "On")
+		; }
+		; if (SetUp.newDict) {
+		; 	SetUp.dict := SetUp.newDict
+		; 	SetUp.newDict := ""
+		; }
 	} catch Error as e {
-		MsgBox(e.Message, , 16)
-		if (!SetUp.dict) {
-			ExitApp
-		}
+		MsgBox(e.Message, "핫키 설정", 16)
+		ExitApp
 	}
-	Hotkey(SetUp.dict["Hotkey"], ShowAliasRunBox, "On")
+	; Hotkey(SetUp.dict["Hotkey"], ShowAliasRunBox, "On")
 }
 
 ; FileInstall Bug : Source File이 %A_WorkingDir% 이외의 곳에 있으면,
@@ -280,6 +286,10 @@ CopyInitFiles() {
 	destFile := A_WorkingDir . "\Lib\_SetUp\AutoHotkey.exe"
 	if !FileExist(destFile)  {
 		FileInstall("AutoHotkey.v1.1.33.10_U64.bin", destFile, 0)
+	}
+	destFile := A_WorkingDir . "\Lib\_SetUp\TapTap.ini"
+	if !FileExist(destFile) {
+		FileInstall("TapTap.ini.Default", destFile, 0)
 	}
 	; 예제 파일
 	destFile := A_WorkingDir . "\Lib\AHK\ShortCut_1.ahk"

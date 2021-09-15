@@ -1,56 +1,49 @@
 ﻿class SetUp {
-    static setUpFile := A_WorkingDir . "\Lib\_SetUp\TapTap.ini"
-    static modificationTime := ""
-    static dict := ""
-    static newDict := ""
-    __new() {
-        this.MakeDict()
+    static dict := {
+        tapTapIniFile : A_WorkingDir . "\Lib\_SetUp\TapTap.ini",
+        tapTapIniModifiedTime : "",
+        aliasListIniModifiedTime : ""
     }
 
-    GetValue(key) {
-        this.ListDict()
-        return SetUp.dict[key]
+    static __new() {
+        SetUp.MakeDict()
     }
 
-    ListDict() {
-        ; ini 날짜 비교, ini 파일 수정 시만 새로 List 작업
-		setUpFile := SetUp.setUpFile
-		fileTime := FileGetTime(setUpFile, "M")
-		if (SetUp.modificationTime = fileTime) {
-			return
-		}
-    	this.MakeDict()
+    static Get(key) {
+        SetUp.MakeDict()
+
+        try {
+            res := SetUp.dict.%key%
+        } catch {
+            res := ""
+        }
+
+        return res
     }
 
-    MakeDict() {
-        setUpFile := SetUp.setUpFile
+    static MakeDict() {
+        ; ini 파일 생성
+        setUpFile := SetUp.dict.tapTapIniFile
         if !FileExist(setUpFile) {
             FileInstall("TapTap.ini.Default", setUpFile, 0)
 		}
-
-        SetUp.newDict := map()
-        try {
-            Loop read, setUpFile
-            {
-               if (Trim(A_LoopReadLine) = "" or InStr(A_LoopReadLine, "#"))	; '#'을 포함한 줄은 모두 제거
-                   continue
-               if ((pos := InStr(A_LoopReadLine, "=")) = 0) {
-                   Throw "환경 설정 구문 해석 에러"
-               }
-               key := Trim(SubStr(A_LoopReadLine, 1, pos - 1))
-               value := Trim(SubStr(A_LoopReadLine, pos + 1))
-               SetUp.newDict[key] := value
-            }
-            fileTime := FileGetTime(setUpFile, "M")
-            SetUp.modificationTime := fileTime
-        } catch Error as e {
-			MsgBox(e.Message, , 16)
-            if (SetUp.dict = "")
-                ExitApp
-            else {
-                SetUp.newDict := ""
-                return
-            }
+        ; ini 날짜 비교, ini 파일 수정 시만 새로 List 작업
+		fileTime := FileGetTime(setUpFile, "M")
+		if (!SetUp.dict.tapTapIniModifiedTime and SetUp.dict.tapTapIniModifiedTime = fileTime) {
+			return
 		}
+        SetUp.dict.tapTapIniModifiedTime := fileTime
+    	; 환경 설정 파일 읽기
+        section := "탭탭이 환경 설정"
+        newDict := SetUp.dict.Clone()
+        newDict.hotkey := IniRead(setUpFile, section, "Hotkey", "Control")
+        newDict.tapTap := IniRead(setUpFile, section, "TapTap", "false") = "false" ? false: true
+        newDict.tapTapSpeed := IniRead(setUpFile, section, "TapTapSpeed", 350)
+        newDict.autoHotkey := IniRead(setUpFile, section, "AutoHotkey", "Lib\_SetUp\AutoHotkey.exe")
+        newDict.tapTapIniFile := IniRead(setUpFile, section, "TapTapIniFile", "Lib\_SetUp\TapTap.ini")
+        newDict.aliasListIniFile := IniRead(setUpFile, section, "AliasListIniFile", "Lib\_SetUp\AliasList.ini")
+        newDict.arbWidth := IniRead(setUpFile, section, "ArbWidth")
+        newDict.editor := IniRead(setupFile, section, "Editor")
+        SetUp.dict := newDict
     }
 }
