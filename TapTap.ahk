@@ -254,12 +254,13 @@ InitTapTap() {
 SetHotkey() {
 	try {
 		global T_Hotkey
-		hotkey_ := SetUp.Get("hotkey")
+		hotkey_ := SetUp.Get("Hotkey")
 		if (T_Hotkey and hotkey_ != T_Hotkey) {
 			Hotkey(T_Hotkey, ShowAliasRunBox, "Off")
 		}
 		if (!T_Hotkey or hotkey_ != T_Hotkey) {
 			Hotkey(hotkey_, ShowAliasRunBox, "On")
+			T_Hotkey := hotkey_
 		}
 
 		; if (SetUp.dict and SetUp.newDict and SetUp.dict["Hotkey"] != SetUp.newDict["Hotkey"]) {

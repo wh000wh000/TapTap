@@ -56,21 +56,21 @@
 		defaultOption := this.option
 		workingDir := this.workingDir
 		res := ""
-		if (aliasType != "BuiltIn" and StrLen(command) > 4) {	; *.ahk *.py 처리
-			if (SubStr(command, StrLen(command) - 3) = ".ahk") {
-				autoHotkey := SetUp.GetFilePath("AutoHotkey")
-				ahkFile := SetUp.GetAhkFilePath(command)
-				command := autoHotkey . " /CP65001 " . ahkFile
-			} else if SubStr(command, StrLen(command) - 2 = ".py") {
-				command := SetUp.GetPythonFilePath(command)
-			}
-		}
 		try {
 			if (aliasType = "BuiltIn") {
 				builtInFunc := ObjBindMethod(this, command)
 				res := aliasType . ", " . builtInFunc(option)
-			} else if (aliasType = "ShortCut") {
-				Run(command . " " . defaultOption, workingDir)
+			} else if (aliasType = "Script") {
+				if (StrLen(command) > 4) {	; *.ahk *.py 처리
+					if (SubStr(command, StrLen(command) - 3) = ".ahk") {
+						autoHotkey := SetUp.GetFilePath("AutoHotkey")
+						ahkFile := SetUp.GetAhkFilePath(command)
+						command := autoHotkey . " /CP65001 " . ahkFile
+					} else if SubStr(command, StrLen(command) - 2 = ".py") {
+						command := SetUp.GetPythonFilePath(command)
+					}
+				}
+				Run(command . " " . option . defaultOption, workingDir)
 				res := aliasType
 			} else if (aliasType = "Etc") {
 				Run(command . " " . option . " " . defaultOption, workingDir)
@@ -106,7 +106,7 @@
 
 	CheckAlias(alias_) {
 		; 즉각 실행 명령
-		if (!alias_ and StrLen(alias_) = 1 and !InStr(Alias.lowerCase, alias_, true) and SubStr(this.aliases[1], 1, 1) == alias_) {	; CaseSensitive
+		if (alias_ and StrLen(alias_) = 1 and !InStr(Alias.lowerCase, alias_, true) and SubStr(this.aliases[1], 1, 1) == alias_) {	; CaseSensitive
 			return "ImmediateRun"
 		}
 		; if ((this.aliasType = "ShortCut" or this.aliasType = "BuiltIn") and alias_ != "") {
@@ -200,19 +200,5 @@
 		; 	msg .= "`n" . "Window Title: " . this.winTitle
 		; 	MsgBox, %msg%
 		; }
-	}
-	i_New(comment:="", aliases:="", aliasType:="", command :="", option:= "", workingDir:="", showCmd:="", winTitle:="", mainMenu:= "", mainIndex:="", subMenu:="", subIndex:="") {
-		this.comment := comment
-		this.aliases := this.GetArrayFromString(aliases)
-		this.aliasType := aliasType
-		this.command := command
-		this.option := option
-		this.workingDir := workingDir
-		this.showCmd := showCmd
-		this.winTitle := winTitle
-		this.mainMenu := mainMenu
-		this.mainIndex := mainIndex
-		this.subMenu := this.GetArrayFromString(subMenu)
-		this.subIndex := this.GetArrayFromString(subIndex)
 	}
 }
