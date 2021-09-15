@@ -188,7 +188,7 @@ ShowARB() {
 		global T_IsInputHighLighting := true
 	}
 
-	SetTimer(EscapeArbTimer,1000)
+	; SetTimer(EscapeArbTimer,1000)
 }
 
 SaveActiveWindow() {
@@ -315,6 +315,10 @@ CopyInitFiles() {
 	destFile := A_WorkingDir . "\Lib\AHK\TapTap_Boot.ahk"
 	if !FileExist(destFile) {
 		FileInstall("TapTap_Boot.ahk.Org", destFile, 0)
+	}
+	destFile := A_WorkingDir . "\Lib\AHK\HelloWorld.py"
+	if !FileExist(destFile) {
+		FileInstall("HelloWorld.py", destFile, 0)
 	}
 	; 소스 파일
 	; destFile := A_WorkingDir . "\Src.zip"

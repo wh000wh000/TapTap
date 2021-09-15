@@ -1,5 +1,7 @@
 ﻿class Alias {
 	static lowerCase := "abcdefghijklmnopqrstuvwxyz."
+	static iniFiles := ["AliasList", "Ini"]
+	static builtInFuncs := ["EditAliasListIni", "EditTapTapIni"]
 
 	QuitTapTap(_) {
 		ExitApp
@@ -9,30 +11,27 @@
 		Reload
 	}
 
-	EditIniFile(option) {
-		editor := SetUp.Get("Editor")
-		static options := ["AliasList", "Ini"]
-		static builtIns := ["EditAliasListIni", "EditTapTapIni"]
-		iniFile := ""
-		builtInFunc := builtIns[1]
-
-		if (StrLen(option) = 1) {
+	GetOptionIndex(option, options) {
+		if (!option) {
+			return 1
+		} else if (StrLen(option) = 1) {
 			for index, value in options {
 				if InStr(value, option, true) {
-					builtInFunc := ObjBindMethod(this, builtIns[index])
-					break
+					return index
 				}
 			}
 		} else {
 			for index, value in options {
 				if InStr(value, option) {
-					builtInFunc := ObjBindMethod(this, builtIns[index])
-					break
+					return index
 				}
 			}
 		}
+	}
 
-		return builtInFunc()
+	EditIniFile(option) {
+		fn := Alias.builtInFuncs[this.GetOptionIndex(option, Alias.iniFiles)]
+		return ObjBindMethod(this, fn).Call("")
 	}
 
 	EditTapTapIni(_) {
@@ -57,42 +56,30 @@
 		workingDir := this.workingDir
 		res := ""
 		try {
-			if (aliasType = "BuiltIn") {
-				builtInFunc := ObjBindMethod(this, command)
-				res := aliasType . ", " . builtInFunc(option)
-			} else if (aliasType = "Script") {
-				if (StrLen(command) > 4) {	; *.ahk *.py 처리
-					if (SubStr(command, StrLen(command) - 3) = ".ahk") {
+			switch aliasType {
+				case "Run", "NewReun", "Site":
+					Run(command . " " . option . defaultOption, workingDir)
+					return "Ok"
+				case "Script":
+					if (StrLen(command) > 4 and SubStr(command, StrLen(command) - 3) = ".ahk") {
 						autoHotkey := SetUp.GetFilePath("AutoHotkey")
 						ahkFile := SetUp.GetAhkFilePath(command)
 						command := autoHotkey . " /CP65001 " . ahkFile
-					} else if SubStr(command, StrLen(command) - 2 = ".py") {
+					} else if (StrLen(command) > 3 and SubStr(command, StrLen(command) - 2) = ".py") {
 						command := SetUp.GetPythonFilePath(command)
 					}
-				}
-				Run(command . " " . option . defaultOption, workingDir)
-				res := aliasType
-			} else if (aliasType = "Etc") {
-				Run(command . " " . option . " " . defaultOption, workingDir)
-				res := aliasType
-			} else {
-				Run(command . " " . option . " " . defaultOption, workingDir)
-				res := aliasType . ", Ok"
+					Run(command . " " . option . defaultOption, workingDir)
+					return aliasType
+				case "BuiltIn":
+					builtInFunc := ObjBindMethod(this, command)
+					return aliasType . ", " . builtInFunc(option)
+				case "Folder":
+					Run("Explorer " . command . option . defaultOption)
+					return aliasType
+				default:	; Etc
+					Run(command . " " . option . " " . defaultOption, workingDir)
+					return aliasType
 			}
-			; if (aliasType = "Run") {
-			; 	Run, % command " " option, % workingDir
-			; } else if (aliasType = "NewRun") {
-			; 	Run, % command " " option, % workingDir
-			; } else if (aliasType = "Script") {
-
-			; } else if (aliasType = "Folder") {
-
-			; } else if (aliasType = "Site") {
-
-			; } else if (aliasType = "Etc") {
-
-			; }
-			return res
 		} catch Error as e {
 			msg := "명령어 타입: " . aliasType . "`n"
 			msg .= "명령어: " . command . "`n"
@@ -114,17 +101,41 @@
 		; 		return "ImmediateRun"
 		; }
 
-		aliasIndex := 0
+		; aliasIndex := 0
+		; For index, value in this.Aliases
+		; {
+		; 	if (alias_ = "") {
+		; 		pos := 1
+		; 	} else {
+		; 		pos := InStr(value, alias_)
+		; 		if (pos != 0)
+		; 		pos .= index
+		; 	}
+		; 	if (pos != 0 and (aliasIndex = 0 || pos < aliasIndex))
+		; 		aliasIndex := pos
+		; 	if (pos = 1)
+		; 		break
+		; }
+		aliasIndex := "99"
 		For index, value in this.Aliases
 		{
+			if (index = 10)
+				break
 			if (alias_ = "") {
-				pos := 1
+				pos_ := "11"
 			} else {
-				pos := InStr(value, alias_)	; alias가 "" 이면, 항상 1 반환
+				pos := InStr(value, alias_)
+				if (pos = 0) {
+					pos_ := "9" . index
+				} else {
+					if (pos > 9)
+						pos := 9
+					pos_ := pos . "" . index
+				}
 			}
-			if (pos != 0 and (aliasIndex = 0 || pos < aliasIndex))
-				aliasIndex := pos
-			if (pos = 1)
+			if (aliasIndex = "99" || pos_ < aliasIndex)
+				aliasIndex := pos_
+			if (pos_ = "11")
 				break
 		}
 		return aliasIndex

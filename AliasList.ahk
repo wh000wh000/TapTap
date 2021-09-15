@@ -18,6 +18,7 @@ Class AliasList {
 		command := Trim(alias)
 		; alias 일치 list 생성
 		firstList := []
+		secondList := []
 		anyList := []
 		For index, value in AliasList.aliasList
 		{
@@ -26,19 +27,31 @@ Class AliasList {
 				AliasList.aliasIndex := index
 				return ["ImmediateRun"]
 			}
-
-			if (res != 0) {
-				if (res = 1) {
-					firstList.Push(index)
-				} else {
-					anyList.Push(index)
-				}
+			if (res = "11") {
+				firstList.Push(index)
+			} else if InStr(res, "1") {
+				secondList.Push(index)
+			} else {
+				anyList.Push(index)
 			}
+			; if (res != 0) {
+			; 	if (res = 1) {
+			; 		firstList.Push(index)
+			; 	} else {
+			; 		anyList.Push(index)
+			; 	}
+			; }
 		}
 		; 순서 지정 list
 		list := []
 		AliasList.aliasIndex := 0
 		For index, value in firstList
+		{
+			if (AliasList.aliasIndex = 0)
+				AliasList.aliasIndex := value
+			list.Push(AliasList.aliasList[value].GetAliasesString())
+		}
+		For index, value in secondList
 		{
 			if (AliasList.aliasIndex = 0)
 				AliasList.aliasIndex := value
