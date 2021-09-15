@@ -99,7 +99,7 @@
 			msg .= "옵션: " . option . defaultOption . "`n"
 			msg .= "작업 폴더: " . workingDir . "`n"
 			msg .= e.Message
-			MsgBox(msg, "명령어 실행 실패", 16)
+			MsgBox(msg, "명령어 실행 에러", 16)
 			return "Error"
 		}
 	}

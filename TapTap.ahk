@@ -273,7 +273,7 @@ SetHotkey() {
 		; 	SetUp.newDict := ""
 		; }
 	} catch Error as e {
-		MsgBox(e.Message, "핫키 설정", 16)
+		MsgBox(e.Message, "핫키 설정 에러", 16)
 		ExitApp
 	}
 	; Hotkey(SetUp.dict["Hotkey"], ShowAliasRunBox, "On")

@@ -90,17 +90,17 @@
 # 주석 란: 어떤 내용을 적어도 무시되는 줄(Line)
 # 탭탭이에서 사용하는 명령어(Alias)를 명령어 종류 별로 구분하여 보여 줌.
 <Alias> ? 탭탭이 별칭(별명, Alias) 목록
-<ShortCut> ShortCut_Help.ahk
+<Script> ShortCut_Help.ahk
 
 # 숫자 ShortCut 사용 예.
 # ShortCut: 숫자 '1' 키
 <Alias> 1, 숫자 '1' 키를 눌러서 인사받기
-<ShortCut> ShortCut_1.ahk, 1
+<Script> ShortCut_1.ahk, 1
 
 # 영문자 ShortCut 사용 예.
 # ShortCut: 영문자 'A' 키
 <Alias> A, 영문자 'A' 키를 눌러서 인사받기
-<ShortCut> ShortCut_Etc.ahk, A
+<Script> ShortCut_Etc.ahk, A
 
 # 파일 탐색기를 이용하여 현재 폴더 화면을 보여줌.
 <Alias> . 현재 폴더 열기
@@ -127,7 +127,7 @@
 <Run> www.google.co.kr
 # 탭탭이 기동(부팅) 시, 자동 실행 루틴
 <OnBoot> 부팅 초기 자동 실행 루틴
-<Run> TapTap_Boot.ahk, Boot_Option
+<Script> TapTap_Boot.ahk, Boot_Option
 # Etc 타입은 명령어 작성란에 어떤 내용을 적어도 전혀 저장되지 않음.
 <Alias> zzzZz, 별칭이 없는 프로그램 작성 용도로 명령어를 입력해도 프로그램 실행 불가.
 <Etc>   zzzZz 이곳엔 내용을 써도 전혀 참조하지 않음.

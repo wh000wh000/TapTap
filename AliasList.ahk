@@ -136,7 +136,7 @@ Class AliasList {
 			}
 			AliasList.aliasList := aliasList_
 		} catch Error as e {
-			MsgBox(e, , 16)
+			MsgBox(e, "명령어 리스트 에러", 16)
 			ExitApp
 		}
 	}
