@@ -242,7 +242,6 @@ InitTapTap() {
 
 	CopyInitFiles()
 
-	; global T_SetUp := SetUp()
 	SetHotkey()
 
 	global T_AliasList := AliasList()

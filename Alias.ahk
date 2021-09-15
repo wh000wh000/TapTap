@@ -9,39 +9,42 @@
 		Reload
 	}
 
-	EditIni(option) {
-		editor := SetUp.dict["Editor"]
-		options := ["AliasList", "Ini"]
-		builtIns := ["EditAliasListIni", "EditTapTapIni"]
+	EditIniFile(option) {
+		editor := SetUp.Get("Editor")
+		static options := ["AliasList", "Ini"]
+		static builtIns := ["EditAliasListIni", "EditTapTapIni"]
 		iniFile := ""
+		builtInFunc := builtIns[1]
+
 		if (StrLen(option) = 1) {
 			for index, value in options {
 				if InStr(value, option, true) {
 					builtInFunc := ObjBindMethod(this, builtIns[index])
-					return builtInFunc()
+					break
 				}
 			}
-		} else if (option) {
+		} else {
 			for index, value in options {
 				if InStr(value, option) {
 					builtInFunc := ObjBindMethod(this, builtIns[index])
-					return builtInFunc()
+					break
 				}
 			}
 		}
-		return this.EditAliasListIni()
+
+		return builtInFunc()
 	}
 
-	EditTapTapIni(_ := "") {
-		editor := SetUp.dict["Editor"]
-		tapTapIniFile := SetUp.dict["TapTapIniFile"]
+	EditTapTapIni(_) {
+		editor := SetUp.Get("Editor")
+		tapTapIniFile := SetUp.GetFilePath("IniFile")
 		RunWait(editor . " " . tapTapIniFile)
 		return "IniChanged"
 	}
 
-	EditAliasListIni(_ := "") {
-		editor := SetUp.dict["Editor"]
-		aliasListIniFile := SetUp.dict["AliasListIniFile"]
+	EditAliasListIni(_) {
+		editor := SetUp.Get("Editor")
+		aliasListIniFile := SetUp.GetFilePath("AliasListIniFile")
 		Run(editor . " " . AliasListIniFile)
 		return ""
 	}
@@ -53,22 +56,28 @@
 		defaultOption := this.option
 		workingDir := this.workingDir
 		res := ""
-		if (aliasType != "BuiltIn" and StrLen(command) > 4 and SubStr(command, StrLen(command) - 3) = ".ahk") {
-			command := A_WorkingDir . "\" . SetUp.Get("AutoHotkey") . " /CP65001 " . A_WorkingDir . "\" . command
+		if (aliasType != "BuiltIn" and StrLen(command) > 4) {	; *.ahk *.py 처리
+			if (SubStr(command, StrLen(command) - 3) = ".ahk") {
+				autoHotkey := SetUp.GetFilePath("AutoHotkey")
+				ahkFile := SetUp.GetAhkFilePath(command)
+				command := autoHotkey . " /CP65001 " . ahkFile
+			} else if SubStr(command, StrLen(command) - 2 = ".py") {
+				command := SetUp.GetPythonFilePath(command)
+			}
 		}
 		try {
 			if (aliasType = "BuiltIn") {
 				builtInFunc := ObjBindMethod(this, command)
-				res := "BuiltIn" . builtInFunc(option)
+				res := aliasType . ", " . builtInFunc(option)
 			} else if (aliasType = "ShortCut") {
 				Run(command . " " . defaultOption, workingDir)
-				res := "ShortCut"
+				res := aliasType
 			} else if (aliasType = "Etc") {
 				Run(command . " " . option . " " . defaultOption, workingDir)
-				res := "Ok"
+				res := aliasType
 			} else {
 				Run(command . " " . option . " " . defaultOption, workingDir)
-				res := "Ok"
+				res := aliasType . ", Ok"
 			}
 			; if (aliasType = "Run") {
 			; 	Run, % command " " option, % workingDir
@@ -90,17 +99,20 @@
 			msg .= "옵션: " . option . defaultOption . "`n"
 			msg .= "작업 폴더: " . workingDir . "`n"
 			msg .= e.Message
-			MsgBox(msg, , 16)
+			MsgBox(msg, "명령어 실행 실패", 16)
 			return "Error"
 		}
 	}
 
 	CheckAlias(alias_) {
 		; 즉각 실행 명령
-		if ((this.aliasType = "ShortCut" or this.aliasType = "BuiltIn") and alias_ != "") {
-			if (StrLen(alias_) = 1 and !InStr(Alias.lowerCase, alias_, true) and SubStr(this.aliases[1], 1, 1) == alias_)	; CaseSensitive
-				return "ImmediateRun"
+		if (!alias_ and StrLen(alias_) = 1 and !InStr(Alias.lowerCase, alias_, true) and SubStr(this.aliases[1], 1, 1) == alias_) {	; CaseSensitive
+			return "ImmediateRun"
 		}
+		; if ((this.aliasType = "ShortCut" or this.aliasType = "BuiltIn") and alias_ != "") {
+		; 	if (StrLen(alias_) = 1 and !InStr(Alias.lowerCase, alias_, true) and SubStr(this.aliases[1], 1, 1) == alias_)	; CaseSensitive
+		; 		return "ImmediateRun"
+		; }
 
 		aliasIndex := 0
 		For index, value in this.Aliases
