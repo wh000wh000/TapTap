@@ -25,6 +25,7 @@ class TapTap {
 	static isArbShowing := false
 	static isInputHighLighting := false
 	static isIniChanged := false
+	static activeWin := ""
 
 	__New() {
 		;@Ahk2Exe-SetMainIcon TapTap.ico
@@ -40,6 +41,7 @@ class TapTap {
 	ShowAliasRunBox(_) {
 		if (TapTap.isArbShowing)
 			return
+		TapTap.activeWin := WinExist("A")
 		hotkeyTime := SetUp.Get("TapTapSpeed")
 		tapTap_ := SetUp.Get("TapTap")
 		If (tapTap_ and A_ThisHotkey = A_PriorHotkey and A_TimeSincePriorHotkey < SetUp.Get("TapTapSpeed")) {
@@ -50,18 +52,16 @@ class TapTap {
 	}
 
 	HideARB() {
-		timer := ObjBindMethod(this, "EscapeArbTimer")
-		SetTimer(timer, 0)
 		TapTap.arb.Hide()
-
-		MouseGetPos( , , &pos)
-		WinActivate(pos)
-		WinWaitActive(pos)
+		timer := ObjBindMethod(this, "ArbEscapeTimer")
+		SetTimer(timer, 0)
 	}
 
-	ARBGuiEscape(_) {
+	ArbEscapePressed(_) {
 		this.HideARB()
 		TapTap.isArbShowing := false
+
+		this.RestoreActiveWindow()
 	}
 
 	TabProcessTimer() {
@@ -69,16 +69,12 @@ class TapTap {
 		ControlSend("{BackSpace}" . previousAlias . "{Enter}", "Edit1", TapTap.arb)
 	}
 
-	TabDeleteTimer() {
-		ControlSend("{Backspace}{Enter}", "Edit1", TapTap.arb)
-	}
-
 	SpaceProcessTimer() {
 		previousAlias := AliasList.previousAlias
 		ControlSend("{End}{Space}", "Edit1", TapTap.arb)
 	}
 
-	ARBGuiEditHandler(ab, _) {
+	ArbEditChanged(ab, _) {
 		TapTap.arb.Submit(false)
 		arbEdit := TapTap.arbEdit.value
 
@@ -88,19 +84,18 @@ class TapTap {
 			if InStr(arbEdit, A_Space) {
 				TapTap.arbEdit.Value := AliasList.previousAlias
 				timer := ObjBindMethod(this, "SpaceProcessTimer")
-				SetTimer(timer, -20)
+				SetTimer(timer, -100)
 				return
 			}
 
 			if InStr(arbEdit, A_Tab) {
 				; GuiControl, , Edit1, % AliasList.previousAlias
 				timer := ObjBindMethod(this, "TabProcessTimer")
-				SetTimer(timer, -20)
+				SetTimer(timer, -100)
 				return
 			}
 		} else if InStr(arbEdit, A_Tab) {
-			timer := ObjBindMethod(this, "TabDeleteTimer")
-			SetTimer(timer, -20)
+			SetTimer(() => ControlSend("{Backspace}{Enter}", "Edit1", TapTap.arb), -100)
 			return
 		}
 		; 명령어 옵션을 입력하는 경우를 제외하고, 리스트 Update
@@ -108,21 +103,28 @@ class TapTap {
 			this.UpdateListView(arbEdit)
 	}
 
-	ARBGuiEnterPressed(abc, i) {
-		this.HideARB()	; ARB 화면 죽인 후, 명령 실행
-		TapTap.arb.Submit()
-		arbEdit := TapTap.arbEdit.value
-		res := AliasList.RunAlias(arbEdit)
-		; this.ARBGuiEscape("_")
-		TapTap.isArbShowing := false
-		if InStr(res, "IniChanged") {
-			this.SetHotkey()
-			TapTap.isIniChanged := true
+	RestoreActiveWindow() {
+		try {
+			WinActivate(TapTap.activeWin)
+			WinWaitActive(TapTap.activeWin)
+		} catch Error as e {
+			MouseGetPos( , , &pos)
+			WinActivate(pos)
+			WinWaitActive(pos)
 		}
 	}
 
-	ImmediateRunTimer() {
-		ControlSend("{Enter}", "Edit1", TapTap.arb)
+	ArbEnterPressed(abc, i) {
+		this.HideARB()	; ARB 화면 죽인 후, 명령 실행
+		TapTap.arb.Submit()
+		arbEdit := TapTap.arbEdit.value
+		this.RestoreActiveWindow()
+		res := AliasList.RunAlias(arbEdit)
+		TapTap.isArbShowing := false
+		if InStr(res[1], "IniChanged") {
+			this.SetHotkey()
+			TapTap.isIniChanged := true
+		}
 	}
 
 	UpdateListView(alias_) {
@@ -135,9 +137,7 @@ class TapTap {
 			return
 		}
 		if (length = 1 and list[1] = "ImmediateRun") {
-			timer := ObjBindMethod(this, "ImmediateRunTimer")
-			SetTimer(timer, -20)
-			; SetTimer(() => ControlSend("{Enter}", "Edit1", TapTap.arb), -20)
+			SetTimer(() => ControlSend("{Enter}", "Edit1", TapTap.arb), -200)
 			return
 		}
 		TapTap.arbList.Opt("-Redraw")
@@ -192,17 +192,19 @@ class TapTap {
 			TapTap.isInputHighLighting := true
 		}
 
-		timer := ObjBindMethod(this, "EscapeArbTimer")
+		timer := ObjBindMethod(this, "ArbEscapeTimer")
 		SetTimer(timer, -1000)
 	}
 
-	EscapeArbTimer() {
+	ArbEscapeTimer() {
 		if WinActive(TapTap.arb) {
-			timer := ObjBindMethod(this, "EscapeArbTimer")
+			timer := ObjBindMethod(this, "ArbEscapeTimer")
 			SetTimer(timer, -1000)
 			return
 		}
 
+		MouseGetPos( , , &pos)
+		TapTap.activeWin := pos
 		ControlSend("{Escape}", "Edit1", TapTap.arb)
 	}
 
@@ -211,16 +213,16 @@ class TapTap {
 		TapTap.arb.SetFont(SetUp.Get("ArbEditFontSize") . " " . SetUp.Get("ArbEditFontWeight"), SetUp.Get("ArbEditFont"))
 		TapTap.arb.MarginX := "1", TapTap.arb.MarginY := "1"
 		TapTap.arbEdit := TapTap.arb.Add("Edit", "w" . SetUp.Get("ArbWidth") . " r1 WantTab")
-		editHandler := ObjBindMethod(this, "ARBGuiEditHandler")
+		editHandler := ObjBindMethod(this, "ArbEditChanged")
 		TapTap.arbEdit.OnEvent("Change", editHandler)
 
 		TapTap.arb.SetFont(SetUp.Get("ArbListFontSize") . " " . SetUp.Get("ArbListFontWeight"), SetUp.Get("ArbListFont"))
 		TapTap.arb.MarginX := "1", TapTap.arb.MarginY := "1"
 		TapTap.arbList := TapTap.arb.Add("ListView", "R" . SetUp.Get("ArbListRows") . " wp -Hdr ReadOnly", ["1"])
 		TapTap.arbEnter := TapTap.arb.Add("Button", "x-10 y-10 w1 h1 +default Hidden")
-		enterHandler := ObjBindMethod(this, "ARBGuiEnterPressed")
+		enterHandler := ObjBindMethod(this, "ArbEnterPressed")
 		TapTap.arbEnter.OnEvent("Click", enterHandler)	; Default Button Hidden
-		escapeHandler := ObjBindMethod(this, "ARBGuiEscape")
+		escapeHandler := ObjBindMethod(this, "ArbEscapePressed")
 		TapTap.arb.OnEvent("Escape", escapeHandler)
 	}
 

@@ -54,11 +54,12 @@
 		defaultOption := this.option
 		workingDir := this.workingDir
 		res := ""
+		pid := ""
 		try {
 			switch aliasType {
 				case "Run", "NewReun", "Site":
-					Run(command . " " . option . defaultOption, workingDir)
-					return "Ok"
+					Run(command . " " . option . defaultOption, workingDir, &pid)
+					res := "Ok"
 				case "Script":
 					if (StrLen(command) > 4 and SubStr(command, StrLen(command) - 3) = ".ahk") {
 						autoHotkey := SetUp.GetFilePath("AutoHotkey")
@@ -67,18 +68,21 @@
 					} else if (StrLen(command) > 3 and SubStr(command, StrLen(command) - 2) = ".py") {
 						command := SetUp.GetPythonFilePath(command)
 					}
-					Run(command . " " . option . defaultOption, workingDir)
-					return aliasType
+					Run(command . " " . option . defaultOption, workingDir, &pid)
+					res := aliasType
 				case "BuiltIn":
 					builtInFunc := ObjBindMethod(this, command)
-					return aliasType . ", " . builtInFunc(option)
+					res := aliasType . ", " . builtInFunc(option)
 				case "Folder":
 					Run("Explorer " . command . option . defaultOption)
-					return aliasType
+					res := aliasType
 				default:	; Etc
-					Run(command . " " . option . " " . defaultOption, workingDir)
-					return aliasType
+					Run(command . " " . option . " " . defaultOption, workingDir, &pid)
+					res := aliasType
 			}
+			if (pid)
+				WinWait("ahk_pid " . pid)
+			return [res, pid]
 		} catch Error as e {
 			msg := "명령어 타입: " . aliasType . "`n"
 			msg .= "명령어: " . command . "`n"
