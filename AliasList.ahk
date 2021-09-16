@@ -86,7 +86,7 @@ Class AliasList {
 		aliasIndex := AliasList.aliasIndex
 		if (AliasList.aliasIndex != 0) {
 			res := AliasList.aliasList[AliasList.aliasIndex].Run(option)
-			if InStr(res, "Ok") {
+			if InStr(res[1], "Ok") {
 				AliasList.previousAlias := command
 			} else {
 				AliasList.previousAlias	:= ""
