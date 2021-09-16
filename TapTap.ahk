@@ -1,21 +1,19 @@
 ﻿#Warn  ; Enable warnings to assist with detecting common errors.
-SendMode("Input")  ; Recommended for new scripts due to its superior speed and reliability.
-SetWorkingDir(A_ScriptDir)  ; Ensures a consistent starting directory.
 #SingleInstance Force
 Persistent
+SetWorkingDir(A_ScriptDir)  ; Ensures a consistent starting directory.
+SendMode("Input")  ; Recommended for new scripts due to its superior speed and reliability.
 FileEncoding("UTF-8")
 
+#Include "SetUp.ahk"
+#Include "AliasList.ahk"
 TapTap()
-
 ; CapsLock 키 변경 to LControl by KeyTweak
 ; CapsLock Toggle 키 (CapsLock + 우측 Shift)
 >+LControl::
 {
 	SetCapsLockState(!GetKeyState("CapsLock", "T"))
 }
-
-#Include "SetUp.ahk"
-#Include "AliasList.ahk"
 
 class TapTap {
 	static arb := ""
@@ -24,9 +22,9 @@ class TapTap {
 	static arbEnter := ""
 	static hotkey := ""
 	static title := "ARB_TapTap"
-	static activeWindowOnArb := ""
 	static isArbShowing := false
 	static isInputHighLighting := false
+	static isIniChanged := false
 
 	__New() {
 		;@Ahk2Exe-SetMainIcon TapTap.ico
@@ -39,71 +37,70 @@ class TapTap {
 
 
 	; 프로그램 함수
-	; Added bracket before function
 	ShowAliasRunBox(_) {
 		if (TapTap.isArbShowing)
 			return
-		If (A_ThisHotkey = A_PriorHotkey and A_TimeSincePriorHotkey < 350)
+		hotkeyTime := SetUp.Get("TapTapSpeed")
+		tapTap_ := SetUp.Get("TapTap")
+		If (tapTap_ and A_ThisHotkey = A_PriorHotkey and A_TimeSincePriorHotkey < SetUp.Get("TapTapSpeed")) {
 			this.ShowARB()
-	}
-
-	ARBGuiClose() {
-		MsgBox("ARB Closed Check!")
+		} else if (!tapTap_) {
+			this.ShowARB()
+		}
 	}
 
 	HideARB() {
 		timer := ObjBindMethod(this, "EscapeArbTimer")
 		SetTimer(timer, 0)
-		; ARB := Gui()
 		TapTap.arb.Hide()
+
+		MouseGetPos( , , &pos)
+		WinActivate(pos)
+		WinWaitActive(pos)
 	}
 
 	ARBGuiEscape(_) {
 		this.HideARB()
 		TapTap.isArbShowing := false
-
-		SetTitleMatchMode(2)
-		WinActivate(TapTap.activeWindowOnArb)
 	}
 
 	TabProcessTimer() {
 		previousAlias := AliasList.previousAlias
-		; GuiControl, , Edit1, % previousAlias	; 안 먹힘
-		; ControlSend, Edit1, {Enter}, % TapTap.title
-		ControlSend("{BackSpace}" . previousAlias . "{Enter}", "Edit1", TapTap.title)
+		ControlSend("{BackSpace}" . previousAlias . "{Enter}", "Edit1", TapTap.arb)
 	}
 
 	TabDeleteTimer() {
-		ControlSend("{Backspace}{Enter}", "Edit1", TapTap.title)
+		ControlSend("{Backspace}{Enter}", "Edit1", TapTap.arb)
 	}
 
 	SpaceProcessTimer() {
 		previousAlias := AliasList.previousAlias
-		; GuiControl, , Edit1, % previousAlias	; 안 먹힘
-		ControlSend("{End}{Space}", "Edit1", TapTap.title)
+		ControlSend("{End}{Space}", "Edit1", TapTap.arb)
 	}
 
 	ARBGuiEditHandler(ab, _) {
-		oSaved := TapTap.arb.Submit(false)
+		TapTap.arb.Submit(false)
 		arbEdit := TapTap.arbEdit.value
 
 		; 입력란 하이라이트, Tab, Space 처리
 		if (TapTap.isInputHighLighting) {
 			TapTap.isInputHighLighting := false
-			previousAlias := AliasList.previousAlias
 			if InStr(arbEdit, A_Space) {
-				TapTap.arbEdit.Value := previousAlias
-				SetTimer(this.SpaceProcessTimer, -20)
+				TapTap.arbEdit.Value := AliasList.previousAlias
+				timer := ObjBindMethod(this, "SpaceProcessTimer")
+				SetTimer(timer, -20)
 				return
 			}
 
 			if InStr(arbEdit, A_Tab) {
-				; GuiControl, , Edit1, % previousAlias
-				SetTimer(this.TabProcessTimer, -20)
+				; GuiControl, , Edit1, % AliasList.previousAlias
+				timer := ObjBindMethod(this, "TabProcessTimer")
+				SetTimer(timer, -20)
 				return
 			}
 		} else if InStr(arbEdit, A_Tab) {
-			SetTimer(this.TabDeleteTimer, -20)
+			timer := ObjBindMethod(this, "TabDeleteTimer")
+			SetTimer(timer, -20)
 			return
 		}
 		; 명령어 옵션을 입력하는 경우를 제외하고, 리스트 Update
@@ -112,18 +109,20 @@ class TapTap {
 	}
 
 	ARBGuiEnterPressed(abc, i) {
-		oSaved := TapTap.arb.Submit(false)
-		arbEdit := TapTap.arbEdit.value
 		this.HideARB()	; ARB 화면 죽인 후, 명령 실행
+		TapTap.arb.Submit()
+		arbEdit := TapTap.arbEdit.value
 		res := AliasList.RunAlias(arbEdit)
-		this.ARBGuiEscape("_")
+		; this.ARBGuiEscape("_")
+		TapTap.isArbShowing := false
 		if InStr(res, "IniChanged") {
 			this.SetHotkey()
+			TapTap.isIniChanged := true
 		}
 	}
 
 	ImmediateRunTimer() {
-		ControlSend("{Enter}", "Edit1", TapTap.title)
+		ControlSend("{Enter}", "Edit1", TapTap.arb)
 	}
 
 	UpdateListView(alias_) {
@@ -138,13 +137,13 @@ class TapTap {
 		if (length = 1 and list[1] = "ImmediateRun") {
 			timer := ObjBindMethod(this, "ImmediateRunTimer")
 			SetTimer(timer, -20)
+			; SetTimer(() => ControlSend("{Enter}", "Edit1", TapTap.arb), -20)
 			return
 		}
 		TapTap.arbList.Opt("-Redraw")
 		TapTap.arbList.Delete()
 		For index, val in list
 		{
-			;LV_Insert(1, , val)
 			TapTap.arbList.Add(, val)
 		}
 		TapTap.arbList.Modify(1, "Select")
@@ -152,11 +151,10 @@ class TapTap {
 	}
 
 	PreviousAliasSendTimer() {
-		previousAlias := AliasList.previousAlias
-		if (previousAlias = "") {
-			ControlSend("^a{Space}{BackSpace}", "Edit1", TapTap.title)
+		if (AliasList.previousAlias = "") {
+			ControlSend("^a{Space}{BackSpace}", "Edit1", TapTap.arb)
 		} else {
-			ControlSend("^a" . previousAlias . "^a", "Edit1", TapTap.title)
+			ControlSend("^a" . AliasList.previousAlias . "^a", "Edit1", TapTap.arb)
 			TapTap.isInputHighLighting := true
 		}
 	}
@@ -164,65 +162,62 @@ class TapTap {
 	ShowARB() {
 		TapTap.isArbShowing := true
 
-		this.SaveActiveWindow()
+		if (TapTap.isIniChanged) {
+			TapTap.arb.Destroy()
+			this.CreateARB()
+			TapTap.isIniChanged := false
+		}
 
 		CoordMode("Mouse", "Screen")
 		MouseGetPos(&mouseX, &mouseY)
 		posX := mouseX
 		posY := mouseY
-		if (A_ScreenWidth < mouseX + 410)
-			posX := A_ScreenWidth - 410
-		if (A_ScreenHeight < mouseY + 220)
-			posY := A_ScreenHeight - 220
+		moveX := SetUp.Get("ArbMoveX")
+		moveY := SetUp.Get("ArbMoveY")
+		if (A_ScreenWidth < mouseX + moveX)
+			posX := A_ScreenWidth - moveX
+		if (A_ScreenHeight < mouseY + moveY)
+			posY := A_ScreenHeight - moveY
 		TapTap.arb.Show("X" . posX . " Y" . posY)
 
 		mouseX := posX + 100
 		mouseY := posY + 15
 		MouseMove(mouseX, mouseY)
 
-		; SetTimer, PreviousAliasSendTimer, -10
 		previousAlias := AliasList.previousAlias
 		if (previousAlias = "") {
-			ControlSend("^a{Space}{BackSpace}", "Edit1", TapTap.title)
+			ControlSend("^a{Space}{BackSpace}", "Edit1", TapTap.arb)
 		} else {
-			ControlSend("^a" . previousAlias . "^a", "Edit1", TapTap.title)
+			ControlSend("^a" . previousAlias . "^a", "Edit1", TapTap.arb)
 			TapTap.isInputHighLighting := true
 		}
 
-		; SetTimer(EscapeArbTimer,1000)
-	}
-
-	SaveActiveWindow() {
-		TapTap.activeWindowOnArb := WinExist("A")
-		if (!TapTap.activeWindowOnArb) {
-			MouseGetPos( , , &pos)
-			TapTap.activeWindowOnArb := pos
-		}
+		timer := ObjBindMethod(this, "EscapeArbTimer")
+		SetTimer(timer, -1000)
 	}
 
 	EscapeArbTimer() {
-		if WinActive(TapTap.title) {
+		if WinActive(TapTap.arb) {
+			timer := ObjBindMethod(this, "EscapeArbTimer")
+			SetTimer(timer, -1000)
 			return
 		}
 
-		this.SaveActiveWindow()
-
-		ControlSend("{Escape}", "Edit1", TapTap.title)
+		ControlSend("{Escape}", "Edit1", TapTap.arb)
 	}
 
 	CreateARB() {
-		TapTap.arb := Gui(, TapTap.title)
-		TapTap.arb.Opt("+AlwaysOnTop -Caption +ToolWindow")
-		TapTap.arb.SetFont("S18 W1000", "나눔고딕")
+		TapTap.arb := Gui("+AlwaysOnTop -Caption +ToolWindow", TapTap.title)
+		TapTap.arb.SetFont(SetUp.Get("ArbEditFontSize") . " " . SetUp.Get("ArbEditFontWeight"), SetUp.Get("ArbEditFont"))
 		TapTap.arb.MarginX := "1", TapTap.arb.MarginY := "1"
-		TapTap.arbEdit := TapTap.arb.Add("Edit", "w320 r1 WantTab vT_ArbEdit")
+		TapTap.arbEdit := TapTap.arb.Add("Edit", "w" . SetUp.Get("ArbWidth") . " r1 WantTab")
 		editHandler := ObjBindMethod(this, "ARBGuiEditHandler")
 		TapTap.arbEdit.OnEvent("Change", editHandler)
 
-		TapTap.arb.SetFont("S12 W800", "나눔고딕")
+		TapTap.arb.SetFont(SetUp.Get("ArbListFontSize") . " " . SetUp.Get("ArbListFontWeight"), SetUp.Get("ArbListFont"))
 		TapTap.arb.MarginX := "1", TapTap.arb.MarginY := "1"
-		TapTap.arbList := TapTap.arb.Add("ListView", "R6 wp -Hdr ReadOnly vT_ArbList", ["1"])
-		TapTap.arbEnter := TapTap.arb.Add("Button", "x-10 y-10 w1 h1 +default Hidden vT_ArbEnter")
+		TapTap.arbList := TapTap.arb.Add("ListView", "R" . SetUp.Get("ArbListRows") . " wp -Hdr ReadOnly", ["1"])
+		TapTap.arbEnter := TapTap.arb.Add("Button", "x-10 y-10 w1 h1 +default Hidden")
 		enterHandler := ObjBindMethod(this, "ARBGuiEnterPressed")
 		TapTap.arbEnter.OnEvent("Click", enterHandler)	; Default Button Hidden
 		escapeHandler := ObjBindMethod(this, "ARBGuiEscape")
@@ -252,25 +247,14 @@ class TapTap {
 				Hotkey(hotkey_, showArb, "On")
 				TapTap.hotkey := hotkey_
 			}
-
-			; if (SetUp.dict and SetUp.newDict and SetUp.dict["Hotkey"] != SetUp.newDict["Hotkey"]) {
-			; 	Hotkey(SetUp.dict["Hotkey"], ShowAliasRunBox, "Off")
-			; } else if (!SetUp.dict or (SetUp.newDict and SetUp.dict["Hotkey"] != SetUp.newDict["Hotkey"])) {
-			; 	Hotkey(SetUp.newDict["Hotkey"], ShowAliasRunBox, "On")
-			; }
-			; if (SetUp.newDict) {
-			; 	SetUp.dict := SetUp.newDict
-			; 	SetUp.newDict := ""
-			; }
 		} catch Error as e {
 			MsgBox(e.Message, "핫키 설정 에러", 16)
 			ExitApp
 		}
-		; Hotkey(SetUp.dict["Hotkey"], ShowAliasRunBox, "On")
 	}
 
 	; FileInstall Bug : Source File이 %A_WorkingDir% 이외의 곳에 있으면,
-	; 절대 경로, 상대 경로 전부 안 먹음.
+	; 절대 경로, 상대 경로 전부 안 먹힘.
 	CopyInitFiles() {
 		; 필수 파일
 		destFile := A_WorkingDir . "\Lib\_SetUp\AutoHotkey.exe"
@@ -306,7 +290,7 @@ class TapTap {
 		if !FileExist(destFile) {
 			FileInstall("TapTap_Boot.ahk.Org", destFile, 0)
 		}
-		destFile := A_WorkingDir . "\Lib\AHK\HelloWorld.py"
+		destFile := A_WorkingDir . "\Lib\Python\HelloWorld.py"
 		if !FileExist(destFile) {
 			FileInstall("HelloWorld.py", destFile, 0)
 		}

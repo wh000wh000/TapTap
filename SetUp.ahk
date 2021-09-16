@@ -87,11 +87,20 @@
         }
         newDict.TapTapIniFile := IniRead(setUpFile, section, "IniFile", "WorkingFolder\Lib\_SetUp\TapTap.ini")
         newDict.AliasListIniFile := IniRead(setUpFile, section, "AliasListIniFile", "WorkingFolder\Lib\_SetUp\AliasList.ini")
-        newDict.ArbWidth := IniRead(setUpFile, section, "ArbWidth")
+        newDict.ArbWidth := IniRead(setUpFile, section, "ArbWidth", "320")
+        newDict.ArbEditFont := IniRead(setUpFile, section, "ArbEditFont", "나눔고딕")
+        newDict.ArbEditFontSize := IniRead(setUpFile, section, "ArbEditFontSize", "S18")
+        newDict.ArbEditFontWeight := IniRead(setUpFile, section, "ArbEditFontWeight", "W1000")
+        newDict.ArbListRows := IniRead(setUpFile, section, "ArbListRows", "6")
+        newDict.ArbListFont := IniRead(setUpFile, section, "ArbListFont", "나눔고딕")
+        newDict.ArbListFontSize := IniRead(setUpFile, section, "ArbListFontSize", "S12")
+        newDict.ArbListFontWeight := IniRead(setUpFile, section, "ArbListFontSize", "W800")
+        newDict.ArbMoveX := IniRead(setUpFile, section, "ArbMoveX", "410")
+        newDict.ArbMoveY := IniRead(setUpFile, section, "ArbMoveY", "220")
         newDict.AutoHotkey := IniRead(setUpFile, section, "AutoHotkey", "WorkingFolder\Lib\_SetUp\AutoHotkey.exe")
         newDict.AhkFolder := IniRead(setUpFile, section, "AhkFolder", "WorkingFolder\Lib\AHK")
         newDict.PythonFolder := IniRead(setUpFile, section, "PythonFolder", "WorkingFolder\Lib\Python")
-        newDict.Editor := IniRead(setupFile, section, "Editor")
+        newDict.Editor := IniRead(setupFile, section, "Editor", "notepad.exe")
         SetUp.Dict := newDict
     }
 }
