@@ -1,4 +1,21 @@
 ﻿#Warn  ; Enable warnings to assist with detecting common errors.
+SendMode("Input")  ; Recommended for new scripts due to its superior speed and reliability.
+SetWorkingDir(A_ScriptDir)  ; Ensures a consistent starting directory.
+#SingleInstance Force
+Persistent
+FileEncoding("UTF-8")
+
+TapTap()
+
+; CapsLock 키 변경 to LControl by KeyTweak
+; CapsLock Toggle 키 (CapsLock + 우측 Shift)
+>+LControl::
+{
+	SetCapsLockState(!GetKeyState("CapsLock", "T"))
+}
+
+#Include "SetUp.ahk"
+#Include "AliasList.ahk"
 
 class TapTap {
 	static arb := ""
@@ -311,23 +328,4 @@ class TapTap {
 			DirCreate(folder)
 		}
 	}
-}
-
-#Include "SetUp.ahk"
-#Include "AliasList.ahk"
-
-SendMode("Input")  ; Recommended for new scripts due to its superior speed and reliability.
-SetWorkingDir(A_ScriptDir)  ; Ensures a consistent starting directory.
-#SingleInstance Force
-Persistent
-FileEncoding("UTF-8")
-
-TapTap()
-return
-
-; CapsLock 키 변경 to LControl by KeyTweak
-; CapsLock Toggle 키 (CapsLock + 우측 Shift)
->+LControl::
-{
-	SetCapsLockState(!GetKeyState("CapsLock", "T"))
 }
