@@ -1,5 +1,7 @@
 ﻿class Alias {
 	static lowerCase := "abcdefghijklmnopqrstuvwxyz."
+	static iniFiles := ["AliasList", "Ini"]
+	static builtInFuncs := ["EditAliasListIni", "EditTapTapIni"]
 
 	QuitTapTap(_) {
 		ExitApp
@@ -9,125 +11,137 @@
 		Reload
 	}
 
-	EditIni(option) {
-		editor := SetUp.dict["Editor"]
-		options := ["AliasList", "Ini"]
-		builtIns := ["EditAliasListIni", "EditTapTapIni"]
-		iniFile := ""
-		if (StrLen(option) = 1) {
+	GetOptionIndex(option, options) {
+		if (!option) {
+			return 1
+		} else if (StrLen(option) = 1) {
 			for index, value in options {
 				if InStr(value, option, true) {
-					builtInFunc := ObjBindMethod(this, builtIns[index])
-					return builtInFunc()
+					return index
 				}
 			}
-		} else if (option) {
+		} else {
 			for index, value in options {
 				if InStr(value, option) {
-					builtInFunc := ObjBindMethod(this, builtIns[index])
-					return builtInFunc()
+					return index
 				}
 			}
 		}
-		return this.EditAliasListIni()
 	}
 
-	EditTapTapIni(_ := "") {
-		editor := SetUp.dict["Editor"]
-		tapTapIniFile := SetUp.dict["TapTapIniFile"]
+	EditIniFile(option) {
+		fn := Alias.builtInFuncs[this.GetOptionIndex(option, Alias.iniFiles)]
+		return ObjBindMethod(this, fn).Call("")
+	}
+
+	EditTapTapIni(_) {
+		editor := SetUp.Get("Editor")
+		tapTapIniFile := SetUp.GetFilePath("IniFile")
 		RunWait(editor . " " . tapTapIniFile)
 		return "IniChanged"
 	}
 
-	EditAliasListIni(_ := "") {
-		editor := SetUp.dict["Editor"]
-		aliasListIniFile := SetUp.dict["AliasListIniFile"]
+	EditAliasListIni(_) {
+		editor := SetUp.Get("Editor")
+		aliasListIniFile := SetUp.GetFilePath("AliasListIniFile")
 		Run(editor . " " . AliasListIniFile)
 		return ""
 	}
 
 	Run(option) {
-		alias_ := this.aliases[1]
 		aliasType := this.aliasType
 		command := this.command
 		defaultOption := this.option
 		workingDir := this.workingDir
 		res := ""
-		if (aliasType != "BuiltIn" and StrLen(command) > 4 and SubStr(command, StrLen(command) - 3) = ".ahk") {
-			command := A_WorkingDir . "\" . SetUp.dict["AutoHotkey"] . " /CP65001 " . A_WorkingDir . "\" . command
-		}
 		try {
-			if (aliasType = "BuiltIn") {
-				builtInFunc := ObjBindMethod(this, command)
-				res := "BuiltIn" . builtInFunc(option)
-			} else if (aliasType = "ShortCut") {
-				Run(command . " " . defaultOption, workingDir)
-				res := "ShortCut"
-			} else if (aliasType = "Etc") {
-				Run(command . " " . option . " " . defaultOption, workingDir)
-				res := "Ok"
-			} else {
-				Run(command . " " . option . " " . defaultOption, workingDir)
-				res := "Ok"
+			switch aliasType {
+				case "Run", "NewReun", "Site":
+					Run(command . " " . option . defaultOption, workingDir)
+					return "Ok"
+				case "Script":
+					if (StrLen(command) > 4 and SubStr(command, StrLen(command) - 3) = ".ahk") {
+						autoHotkey := SetUp.GetFilePath("AutoHotkey")
+						ahkFile := SetUp.GetAhkFilePath(command)
+						command := autoHotkey . " /CP65001 " . ahkFile
+					} else if (StrLen(command) > 3 and SubStr(command, StrLen(command) - 2) = ".py") {
+						command := SetUp.GetPythonFilePath(command)
+					}
+					Run(command . " " . option . defaultOption, workingDir)
+					return aliasType
+				case "BuiltIn":
+					builtInFunc := ObjBindMethod(this, command)
+					return aliasType . ", " . builtInFunc(option)
+				case "Folder":
+					Run("Explorer " . command . option . defaultOption)
+					return aliasType
+				default:	; Etc
+					Run(command . " " . option . " " . defaultOption, workingDir)
+					return aliasType
 			}
-			; if (aliasType = "Run") {
-			; 	Run, % command " " option, % workingDir
-			; } else if (aliasType = "NewRun") {
-			; 	Run, % command " " option, % workingDir
-			; } else if (aliasType = "Script") {
-
-			; } else if (aliasType = "Folder") {
-
-			; } else if (aliasType = "Site") {
-
-			; } else if (aliasType = "Etc") {
-
-			; }
-			return res
 		} catch Error as e {
 			msg := "명령어 타입: " . aliasType . "`n"
 			msg .= "명령어: " . command . "`n"
 			msg .= "옵션: " . option . defaultOption . "`n"
 			msg .= "작업 폴더: " . workingDir . "`n"
 			msg .= e.Message
-			MsgBox(msg, , 16)
+			MsgBox(msg, "명령어 실행 에러", 16)
 			return "Error"
 		}
 	}
 
 	CheckAlias(alias_) {
-		; 즉각 실행 명령
-		if ((this.aliasType = "ShortCut" or this.aliasType = "BuiltIn") and alias_ != "") {
-			if (StrLen(alias_) = 1 and !InStr(Alias.lowerCase, alias_, true) and SubStr(this.aliases[1], 1, 1) == alias_)	; CaseSensitive
-				return "ImmediateRun"
+		; 단축키: 즉각 실행 명령
+		aliasLen := StrLen(alias_)
+		if (alias_ and aliasLen = 1 and !InStr(Alias.lowerCase, alias_, true) and SubStr(this.aliases[1], 1, 1) == alias_) {	; CaseSensitive
+			return "ImmediateRun"
 		}
 
-		aliasIndex := 0
+		; 첫 별칭에서 처음부터 일치하는 경우: 1
+		; 2번째 이후 별칭에서 처음부터 일치하는 경우: 2
+		; 중간의 대문자가 일치하는 경우: 3
+		; 아무 곳이나 일치하는 경우: 4
+		; 일치하는 곳이 없는 경우: 5
+		aliasIndex := 5
 		For index, value in this.Aliases
 		{
-			if (alias_ = "") {
-				pos := 1
+			if (aliasLen = 0) {
+				return 1
 			} else {
-				pos := InStr(value, alias_)	; alias가 "" 이면, 항상 1 반환
+				pos := InStr(value, alias_)
+				if (pos = 1) {
+					if (index = 1) {
+						return 1
+					} else {
+						return 2
+					}
+				}
+				; [옵션1 옵션2] "[" 제거
+				if (pos > 1 and InStr(SubStr(value, 1, pos - 1), "[")) {
+					continue
+				}
+				ch := SubStr(alias_, aliasLen)
+				if (!InStr(Alias.lowerCase, ch, true) and aliasLen > 1) {
+					; 중간 대문자 찾기
+					p := Instr(value, SubStr(alias_, 1, aliasLen - 1))
+					toSeek := p + aliasLen - 1
+					chPos := InStr(SubStr(value, toSeek), ch, true)
+					if ((p and StrLen(value) >= toSeek) and chPos) {
+						; [옵션1 옵션2] "[" 제거
+						if !InStr(SubStr(value, 1, toSeek + chPos -1), "[")
+							aliasIndex := 3
+					}
+				}
+				if (pos and aliasIndex = 5) {
+					aliasIndex := 4
+				}
 			}
-			if (pos != 0 and (aliasIndex = 0 || pos < aliasIndex))
-				aliasIndex := pos
-			if (pos = 1)
-				break
 		}
 		return aliasIndex
 	}
 
 	GetAliasesString() {
 		return this.GetStringFromArray(this.aliases)
-	}
-
-	GetSubMenuString() {
-		return this.GetStringFromArray(this.subMenu)
-	}
-
-	GetSubIndexString() {
-		return this.GetStringFromArray(this.subIndex)
 	}
 
 	GetArrayFromString(str) {
@@ -147,17 +161,35 @@
 		{
 			if (str = "")
 				str := value
-			else if (value != "")
-					str := str . ", " . value
+			else
+				str := str . ", " . value
 		}
 		return str
 	}
 
-	__New(aliasType, aliasLine, typeLine) {
-		this.aliasType := aliasType
-		this.aliases := this.GetArrayFromString(aliasLine)
+	GetCommandString() {
+		arr := []
+		arr.Push(this.command)
+		arr.Push(this.Option)
+		arr.Push(this.workingDir)
+		arr.Push(this.winTitle)
+		str := Trim(this.GetStringFromArray(arr))
+		Loop 4
+		{
+			if (SubStr(str, StrLen(str), 1) = ",") {
+				str := Trim(SubStr(str, 1, Strlen(str) - 1))
+			} else {
+				break
+			}
+		}
+		return str
+	}
 
-		typeArray := this.GetArrayFromString(typeLine)
+	__New(aliasType, aliasesLine, commandLine) {
+		this.aliasType := aliasType
+		this.aliases := this.GetArrayFromString(aliasesLine)
+
+		typeArray := this.GetArrayFromString(commandLine)
 		if (typeArray.Length) {
 			this.command := Trim(typeArray.RemoveAt(1))
 		} else {
@@ -188,19 +220,5 @@
 		; 	msg .= "`n" . "Window Title: " . this.winTitle
 		; 	MsgBox, %msg%
 		; }
-	}
-	i_New(comment:="", aliases:="", aliasType:="", command :="", option:= "", workingDir:="", showCmd:="", winTitle:="", mainMenu:= "", mainIndex:="", subMenu:="", subIndex:="") {
-		this.comment := comment
-		this.aliases := this.GetArrayFromString(aliases)
-		this.aliasType := aliasType
-		this.command := command
-		this.option := option
-		this.workingDir := workingDir
-		this.showCmd := showCmd
-		this.winTitle := winTitle
-		this.mainMenu := mainMenu
-		this.mainIndex := mainIndex
-		this.subMenu := this.GetArrayFromString(subMenu)
-		this.subIndex := this.GetArrayFromString(subIndex)
 	}
 }

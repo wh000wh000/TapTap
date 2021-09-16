@@ -5,15 +5,13 @@ SetWorkingDir(A_ScriptDir)  ; Ensures a consistent starting directory.
 Persistent
 FileEncoding("UTF-8")
 
-#Include "AliasList.ahk"
 #Include "SetUp.ahk"
+#Include "AliasList.ahk"
 
 global T_Arb := ""
 global T_ArbEdit := ""
 global T_ArbList := ""
 global T_ArbEnter := ""
-global T_AliasList := ""
-global T_SetUp := ""
 global T_Hotkey := ""
 global T_TapTapTitle := "ARB_TapTap"
 global T_ActiveWindowOnArb := ""
@@ -113,10 +111,9 @@ ARBGuiEnterPressed(abc, i) {
 	oSaved := T_Arb.Submit(false)
 	arbEdit := T_ArbEdit.value
 	HideARB()	; ARB 화면 죽인 후, 명령 실행
-	res := T_AliasList.RunAlias(arbEdit)
+	res := AliasList.RunAlias(arbEdit)
 	ARBGuiEscape("_")
 	if InStr(res, "IniChanged") {
-		T_SetUp.MakeDict()
 		SetHotkey()
 	}
 }
@@ -126,7 +123,7 @@ ImmediateRunTimer() {
 }
 
 UpdateListView(alias_) {
-	list := T_AliasList.ListAlias(alias_)
+	list := AliasList.ListAlias(alias_)
 	length := list.Length
 	if (length = 0) {
 		T_ArbList.Opt("-Redraw")
@@ -160,7 +157,6 @@ PreviousAliasSendTimer() {
 }
 
 ShowARB() {
-	global T_AliasList
     global T_IsArbShowing := true
 
 	SaveActiveWindow()
@@ -180,7 +176,6 @@ ShowARB() {
 	MouseMove(mouseX, mouseY)
 
 	; SetTimer, PreviousAliasSendTimer, -10
-	; previousAlias := T_AliasList.previousAlias
 	previousAlias := AliasList.previousAlias
 	if (previousAlias = "") {
 		ControlSend("^a{Space}{BackSpace}", "Edit1", T_TapTapTitle)
@@ -189,7 +184,7 @@ ShowARB() {
 		global T_IsInputHighLighting := true
 	}
 
-	SetTimer(EscapeArbTimer,1000)
+	; SetTimer(EscapeArbTimer,1000)
 }
 
 SaveActiveWindow() {
@@ -242,35 +237,36 @@ InitTapTap() {
 	; CreateFolder(A_WorkingDir . "\Src")
 
 	CopyInitFiles()
-
-	global T_SetUp := SetUp()
 	SetHotkey()
-
-	global T_AliasList := AliasList()
-	T_AliasList.RunOnBoot()
-
-	; 탭탭이(TapTap) ARB 기동 용 핫키 지정
-	; SetHotkey()
+	AliasList.RunOnBoot()
 }
 
 SetHotkey() {
 	try {
-		if (SetUp.dict and SetUp.newDict and SetUp.dict["Hotkey"] != SetUp.newDict["Hotkey"]) {
-			Hotkey(SetUp.dict["Hotkey"], ShowAliasRunBox, "Off")
-		} else if (!SetUp.dict or (SetUp.newDict and SetUp.dict["Hotkey"] != SetUp.newDict["Hotkey"])) {
-			Hotkey(SetUp.newDict["Hotkey"], ShowAliasRunBox, "On")
+		global T_Hotkey
+		hotkey_ := SetUp.Get("Hotkey")
+		if (T_Hotkey and hotkey_ != T_Hotkey) {
+			Hotkey(T_Hotkey, ShowAliasRunBox, "Off")
 		}
-		if (SetUp.newDict) {
-			SetUp.dict := SetUp.newDict
-			SetUp.newDict := ""
+		if (!T_Hotkey or hotkey_ != T_Hotkey) {
+			Hotkey(hotkey_, ShowAliasRunBox, "On")
+			T_Hotkey := hotkey_
 		}
+
+		; if (SetUp.dict and SetUp.newDict and SetUp.dict["Hotkey"] != SetUp.newDict["Hotkey"]) {
+		; 	Hotkey(SetUp.dict["Hotkey"], ShowAliasRunBox, "Off")
+		; } else if (!SetUp.dict or (SetUp.newDict and SetUp.dict["Hotkey"] != SetUp.newDict["Hotkey"])) {
+		; 	Hotkey(SetUp.newDict["Hotkey"], ShowAliasRunBox, "On")
+		; }
+		; if (SetUp.newDict) {
+		; 	SetUp.dict := SetUp.newDict
+		; 	SetUp.newDict := ""
+		; }
 	} catch Error as e {
-		MsgBox(e.Message, , 16)
-		if (!SetUp.dict) {
-			ExitApp
-		}
+		MsgBox(e.Message, "핫키 설정 에러", 16)
+		ExitApp
 	}
-	Hotkey(SetUp.dict["Hotkey"], ShowAliasRunBox, "On")
+	; Hotkey(SetUp.dict["Hotkey"], ShowAliasRunBox, "On")
 }
 
 ; FileInstall Bug : Source File이 %A_WorkingDir% 이외의 곳에 있으면,
@@ -280,6 +276,10 @@ CopyInitFiles() {
 	destFile := A_WorkingDir . "\Lib\_SetUp\AutoHotkey.exe"
 	if !FileExist(destFile)  {
 		FileInstall("AutoHotkey.v1.1.33.10_U64.bin", destFile, 0)
+	}
+	destFile := A_WorkingDir . "\Lib\_SetUp\TapTap.ini"
+	if !FileExist(destFile) {
+		FileInstall("TapTap.ini.Default", destFile, 0)
 	}
 	; 예제 파일
 	destFile := A_WorkingDir . "\Lib\AHK\ShortCut_1.ahk"
@@ -305,6 +305,10 @@ CopyInitFiles() {
 	destFile := A_WorkingDir . "\Lib\AHK\TapTap_Boot.ahk"
 	if !FileExist(destFile) {
 		FileInstall("TapTap_Boot.ahk.Org", destFile, 0)
+	}
+	destFile := A_WorkingDir . "\Lib\AHK\HelloWorld.py"
+	if !FileExist(destFile) {
+		FileInstall("HelloWorld.py", destFile, 0)
 	}
 	; 소스 파일
 	; destFile := A_WorkingDir . "\Src.zip"

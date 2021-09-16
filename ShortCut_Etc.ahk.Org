@@ -1,23 +1,23 @@
 ﻿/*
-    탭탭이(TapTap)에서 사용할 "한 글자" 핫키 설정
-    영문자는 대문자만 핫키로 사용.
-    모든 Hotkey에는 "핫키" 한(1) 자가 "인자"로 전달됨.
+    탭탭이(TapTap)에서 사용할 "한 글자" 단축키 설정
+    영문자는 대문자만 단축키로 사용
+    단축키에도 AliasList.ini에 미리 지정한 인자를 전달 가능
 */
 
-; 핫키 호출 함수
-; 기능: TapTap이로부터 인자를 받아 영문자 핫키를 호출함.
-Hotkey_Etc:
+; 단축키 호출 함수
+; 기능: AliasList.ini에 미리 지정한 인자를 전달 받아 영문자 한 글자 단축키를 호출함.
+ShortCut_Etc:
 {
     arg := A_Args[1]
 
-    hotkeyFunc := Func("Hotkey_" . arg)
+    shortCutFunc := Func("ShortCut_" . arg)
 
-    %hotkeyFunc%(arg)
+    %shortCutFunc%(arg)
 }
 
-; Hotkey: 'A' 키
+; 단축키: 'A' 키
 ; 기능: 인사하기 테스트
-Hotkey_A(option) {
+ShortCut_A(option) {
     greeting := "안녕하세요!, 반갑습니다~ 탭탭이입니다!`n`n이 창은 5초 후 사라집니다.`n`n"
 
     if (option)
