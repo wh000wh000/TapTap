@@ -1,5 +1,6 @@
 ﻿#Include "Alias.ahk"
 Class AliasList {
+	static aliasTypes := ["Run", "Script", "BuiltIn", "Site", "Folder", "NewRun", "Etc"]
 	static aliasList := ""	; Alias List 배열
 	static modificationTime := ""
 	static previousAlias := ""
@@ -8,12 +9,12 @@ Class AliasList {
 	static aliasListFile := A_WorkingDir . "\Lib\_SetUp\AliasList.ini"
 	static onBootAlias := ""
 
-	__New() {
-		this.MakeList()
+	static __New() {
+		AliasList.MakeList()
 	}
 
-	ListAlias(alias) {
-		this.MakeList()
+	static ListAlias(alias) {
+		AliasList.MakeList()
 
 		command := Trim(alias)
 		; alias 일치 list 생성
@@ -68,11 +69,11 @@ Class AliasList {
 		return list
 	}
 
-	RunOnBoot() {
+	static RunOnBoot() {
 		AliasList.onBootAlias.Run("")
 	}
 
-	RunAlias(alias) {
+	static RunAlias(alias) {
 		command := Trim(alias)
 		option := ""
 		; 명령어와 옵션 분리
@@ -96,7 +97,7 @@ Class AliasList {
 		return res
 	}
 
-	MakeList() {
+	static MakeList() {
 		; ini 파일 생성
 		aliasListFile := AliasList.aliasListFile
 		if !FileExist(aliasListFile) {
@@ -109,50 +110,49 @@ Class AliasList {
 		} else {
 			AliasList.modificationTime := fileTime
 		}
-		; ini 파일의 Section을 이용하여 AliasList 작성
-		try {
-			aliasList_ := []
-			aliasLine := ""
-			aliasType := ""
-			typeLine := ""
-			isAliasParsing := false
-			parsingStage := 0
-			Loop read, aliasListFile
-			{
-				if (Trim(A_LoopReadLine) = "" or InStr(A_LoopReadLine, "#"))	; '#'을 포함한 줄은 모두 제거
-					continue
-				if (!isAliasParsing and InStr(A_LoopReadLine, "<Alias>")) {
-					pos := InStr(A_LoopReadLine, ">")
-					aliasLine := Trim(SubStr(A_LoopReadLine, pos + 1))
-					parsingStage := 1
-				} else if (!isAliasParsing and InStr(A_LoopReadLine, "<OnBoot>")) {
-					parsingStage := 2
-				} else if ((!isAliasParsing and RegExMatch(A_LoopReadLine, "i)<[a-z]+>"))
-					and !InStr(A_LoopReadLine, "<Alias>") and !InStr(A_LoopReadLine, "<OnBoot>")) {
-					left := InStr(A_LoopReadLine, "<")
-					right := InStr(A_LoopReadLine, ">")
-					aliasType := Trim(SubStr(A_LoopReadLine, left + 1, right - left - 1))
-					typeLine := Trim(SubStr(A_LoopReadLine, right + 1))
-					isAliasParsing := true
-				} else {
-					Throw "별칭 명령어 구문 해석 실패"
-				}
-				if (!isAliasParsing)
-					continue
-
-				alias_ := Alias(aliasType, aliasLine, typeLine)
-				if (parsingStage = 1) {
-					aliasList_.push(alias_)
-				} else if (parsingStage = 2) {
-					AliasList.onBootAlias := alias_
-				}
-				isAliasParsing := false
-				parsingStage := 0
+		;ini 파일의 Section을 이용하여 AliasList 작성
+		aliasList_ := []
+		aliasLine := ""
+		aliasType := ""
+		commandLine := ""
+		sectionList := IniRead(aliasListFile)
+		Loop parse sectionList, "`n" {
+			if (A_LoopField != "OnBoot") {
+				aliasLine := IniRead(aliasListFile, A_LoopField, "Alias")
 			}
-			AliasList.aliasList := aliasList_
-		} catch Error as e {
-			MsgBox(e, "명령어 리스트 에러", 16)
-			ExitApp
+			command := AliasList.GetCommandLine(aliasListFile, A_LoopField)
+			aliasType := command[1]
+			commandLine := command[2]
+			alias_ := Alias(aliasType, aliasLine, commandLine)
+			if (A_LoopField != "OnBoot") {
+				aliasList_.push(alias_)
+			} else {
+				AliasList.onBootAlias := alias_
+			}
 		}
+		AliasList.aliasList := aliasList_
+	}
+
+	static WriteList() {
+		iniFile := "Test.ini"
+		for index, alias_ in AliasList.aliasList {
+			section := "별칭 " . index
+			IniWrite(alias_.GetAliasesString(), iniFile, section, "Alias")
+			aliasType := alias_.aliasType
+			IniWrite(alias_.GetCommandString(), iniFile, section, aliasType)
+		}
+	}
+
+	static GetCommandLine(aliasListFile, section) {
+		commandLine := ""
+		aliasType := ""
+		for index, aType in AliasList.aliasTypes {
+			commandLine := IniRead(aliasListFile, section, aType, "")
+			if (commandLine) {
+				aliasType := AliasList.aliasTypes[index]
+				break
+			}
+		}
+		return [aliasType, commandLine]
 	}
 }

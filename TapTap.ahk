@@ -12,8 +12,6 @@ global T_Arb := ""
 global T_ArbEdit := ""
 global T_ArbList := ""
 global T_ArbEnter := ""
-global T_AliasList := ""
-; global T_SetUp := ""
 global T_Hotkey := ""
 global T_TapTapTitle := "ARB_TapTap"
 global T_ActiveWindowOnArb := ""
@@ -113,7 +111,7 @@ ARBGuiEnterPressed(abc, i) {
 	oSaved := T_Arb.Submit(false)
 	arbEdit := T_ArbEdit.value
 	HideARB()	; ARB 화면 죽인 후, 명령 실행
-	res := T_AliasList.RunAlias(arbEdit)
+	res := AliasList.RunAlias(arbEdit)
 	ARBGuiEscape("_")
 	if InStr(res, "IniChanged") {
 		SetHotkey()
@@ -125,7 +123,7 @@ ImmediateRunTimer() {
 }
 
 UpdateListView(alias_) {
-	list := T_AliasList.ListAlias(alias_)
+	list := AliasList.ListAlias(alias_)
 	length := list.Length
 	if (length = 0) {
 		T_ArbList.Opt("-Redraw")
@@ -159,7 +157,6 @@ PreviousAliasSendTimer() {
 }
 
 ShowARB() {
-	global T_AliasList
     global T_IsArbShowing := true
 
 	SaveActiveWindow()
@@ -179,7 +176,6 @@ ShowARB() {
 	MouseMove(mouseX, mouseY)
 
 	; SetTimer, PreviousAliasSendTimer, -10
-	; previousAlias := T_AliasList.previousAlias
 	previousAlias := AliasList.previousAlias
 	if (previousAlias = "") {
 		ControlSend("^a{Space}{BackSpace}", "Edit1", T_TapTapTitle)
@@ -241,14 +237,8 @@ InitTapTap() {
 	; CreateFolder(A_WorkingDir . "\Src")
 
 	CopyInitFiles()
-
 	SetHotkey()
-
-	global T_AliasList := AliasList()
-	T_AliasList.RunOnBoot()
-
-	; 탭탭이(TapTap) ARB 기동 용 핫키 지정
-	; SetHotkey()
+	AliasList.RunOnBoot()
 }
 
 SetHotkey() {

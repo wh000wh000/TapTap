@@ -49,7 +49,6 @@
 	}
 
 	Run(option) {
-		alias_ := this.aliases[1]
 		aliasType := this.aliasType
 		command := this.command
 		defaultOption := this.option
@@ -162,17 +161,35 @@
 		{
 			if (str = "")
 				str := value
-			else if (value != "")
-					str := str . ", " . value
+			else
+				str := str . ", " . value
 		}
 		return str
 	}
 
-	__New(aliasType, aliasLine, typeLine) {
-		this.aliasType := aliasType
-		this.aliases := this.GetArrayFromString(aliasLine)
+	GetCommandString() {
+		arr := []
+		arr.Push(this.command)
+		arr.Push(this.Option)
+		arr.Push(this.workingDir)
+		arr.Push(this.winTitle)
+		str := Trim(this.GetStringFromArray(arr))
+		Loop 4
+		{
+			if (SubStr(str, StrLen(str), 1) = ",") {
+				str := Trim(SubStr(str, 1, Strlen(str) - 1))
+			} else {
+				break
+			}
+		}
+		return str
+	}
 
-		typeArray := this.GetArrayFromString(typeLine)
+	__New(aliasType, aliasesLine, commandLine) {
+		this.aliasType := aliasType
+		this.aliases := this.GetArrayFromString(aliasesLine)
+
+		typeArray := this.GetArrayFromString(commandLine)
 		if (typeArray.Length) {
 			this.command := Trim(typeArray.RemoveAt(1))
 		} else {
