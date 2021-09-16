@@ -17,9 +17,10 @@ Class AliasList {
 
 		command := Trim(alias)
 		; alias 일치 list 생성
-		firstList := []
-		secondList := []
-		anyList := []
+		List1 := []
+		List2 := []
+		List3 := []
+		List4 := []
 		For index, value in AliasList.aliasList
 		{
 			res := value.CheckAlias(command)
@@ -27,37 +28,38 @@ Class AliasList {
 				AliasList.aliasIndex := index
 				return ["ImmediateRun"]
 			}
-			if (res = "11") {
-				firstList.Push(index)
-			} else if InStr(res, "1") {
-				secondList.Push(index)
-			} else {
-				anyList.Push(index)
+			if (res = 1) {
+				List1.Push(index)
+			} else if (res = 2) {
+				List2.Push(index)
+			} else if (res = 3) {
+				List3.Push(index)
+			} else if (res = 4) {
+				List4.Push(index)
 			}
-			; if (res != 0) {
-			; 	if (res = 1) {
-			; 		firstList.Push(index)
-			; 	} else {
-			; 		anyList.Push(index)
-			; 	}
-			; }
 		}
 		; 순서 지정 list
 		list := []
 		AliasList.aliasIndex := 0
-		For index, value in firstList
+		For index, value in List1
 		{
 			if (AliasList.aliasIndex = 0)
 				AliasList.aliasIndex := value
 			list.Push(AliasList.aliasList[value].GetAliasesString())
 		}
-		For index, value in secondList
+		For index, value in List2
 		{
 			if (AliasList.aliasIndex = 0)
 				AliasList.aliasIndex := value
 			list.Push(AliasList.aliasList[value].GetAliasesString())
 		}
-		For index, value in anyList
+		For index, value in List3
+		{
+			if (AliasList.aliasIndex = 0)
+				AliasList.aliasIndex := value
+			list.Push(AliasList.aliasList[value].GetAliasesString())
+		}
+		For index, value in List4
 		{
 			if (AliasList.aliasIndex = 0)
 				AliasList.aliasIndex := value

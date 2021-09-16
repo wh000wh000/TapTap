@@ -92,65 +92,57 @@
 	}
 
 	CheckAlias(alias_) {
-		; 즉각 실행 명령
-		if (alias_ and StrLen(alias_) = 1 and !InStr(Alias.lowerCase, alias_, true) and SubStr(this.aliases[1], 1, 1) == alias_) {	; CaseSensitive
+		; 단축키: 즉각 실행 명령
+		aliasLen := StrLen(alias_)
+		if (alias_ and aliasLen = 1 and !InStr(Alias.lowerCase, alias_, true) and SubStr(this.aliases[1], 1, 1) == alias_) {	; CaseSensitive
 			return "ImmediateRun"
 		}
-		; if ((this.aliasType = "ShortCut" or this.aliasType = "BuiltIn") and alias_ != "") {
-		; 	if (StrLen(alias_) = 1 and !InStr(Alias.lowerCase, alias_, true) and SubStr(this.aliases[1], 1, 1) == alias_)	; CaseSensitive
-		; 		return "ImmediateRun"
-		; }
 
-		; aliasIndex := 0
-		; For index, value in this.Aliases
-		; {
-		; 	if (alias_ = "") {
-		; 		pos := 1
-		; 	} else {
-		; 		pos := InStr(value, alias_)
-		; 		if (pos != 0)
-		; 		pos .= index
-		; 	}
-		; 	if (pos != 0 and (aliasIndex = 0 || pos < aliasIndex))
-		; 		aliasIndex := pos
-		; 	if (pos = 1)
-		; 		break
-		; }
-		aliasIndex := "99"
+		; 첫 별칭에서 처음부터 일치하는 경우: 1
+		; 2번째 이후 별칭에서 처음부터 일치하는 경우: 2
+		; 중간의 대문자가 일치하는 경우: 3
+		; 아무 곳이나 일치하는 경우: 4
+		; 일치하는 곳이 없는 경우: 5
+		aliasIndex := 5
 		For index, value in this.Aliases
 		{
-			if (index = 10)
-				break
-			if (alias_ = "") {
-				pos_ := "11"
+			if (aliasLen = 0) {
+				return 1
 			} else {
 				pos := InStr(value, alias_)
-				if (pos = 0) {
-					pos_ := "9" . index
-				} else {
-					if (pos > 9)
-						pos := 9
-					pos_ := pos . "" . index
+				if (pos = 1) {
+					if (index = 1) {
+						return 1
+					} else {
+						return 2
+					}
+				}
+				; [옵션1 옵션2] "[" 제거
+				if (pos > 1 and InStr(SubStr(value, 1, pos - 1), "[")) {
+					continue
+				}
+				ch := SubStr(alias_, aliasLen)
+				if (!InStr(Alias.lowerCase, ch, true) and aliasLen > 1) {
+					; 중간 대문자 찾기
+					p := Instr(value, SubStr(alias_, 1, aliasLen - 1))
+					toSeek := p + aliasLen - 1
+					chPos := InStr(SubStr(value, toSeek), ch, true)
+					if ((p and StrLen(value) >= toSeek) and chPos) {
+						; [옵션1 옵션2] "[" 제거
+						if !InStr(SubStr(value, 1, toSeek + chPos -1), "[")
+							aliasIndex := 3
+					}
+				}
+				if (pos and aliasIndex = 5) {
+					aliasIndex := 4
 				}
 			}
-			if (aliasIndex = "99" || pos_ < aliasIndex)
-				aliasIndex := pos_
-			if (pos_ = "11")
-				break
 		}
 		return aliasIndex
 	}
 
 	GetAliasesString() {
 		return this.GetStringFromArray(this.aliases)
-	}
-
-	GetSubMenuString() {
-		return this.GetStringFromArray(this.subMenu)
-	}
-
-	GetSubIndexString() {
-		return this.GetStringFromArray(this.subIndex)
 	}
 
 	GetArrayFromString(str) {
