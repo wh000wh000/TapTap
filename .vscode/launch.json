@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}\\TapTap.ahk",
             "stopOnEntry": false,
             "captureStreams": true,
-            "AhkExecutable": "C:\\Program Files\\AutoHotkey\\AutoHotkey.exe",
+            "AhkExecutable": "C:\\App\\Prog\\AutoHotkey\\AutoHotkey.exe",
             "port": 9005
         },
         {
@@ -21,7 +21,7 @@
             "program": "${file}",
             "stopOnEntry": false,
             "captureStreams": true,
-            "AhkExecutable": "C:\\Program Files\\AutoHotkey\\AutoHotkey.exe",
+            "AhkExecutable": "C:\\App\\Prog\\AutoHotkey\\AutoHotkey.exe",
             "port": 9005
         },
     ]

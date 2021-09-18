@@ -7,6 +7,7 @@
 		thisObject := this
 		this.SaveActiveWindow()
 
+		thisObject := this
 		Gui, WifeWatch:New, +AlwaysOnTop -SysMenu -Caption +ToolWindow, % WifeWatch.WatchTitle
 		Gui, WifeWatch:Color, Yellow
 		Gui, WifeWatch:Margin, 4, 0
@@ -27,16 +28,17 @@
 	}
 
 	RestoreActiveWindow() {
-		SetTitleMatchMode, 2
-		WinActivate, % WifeWatch.activeWindow
+		active := "ahk_id " . WifeWatch.activeWindow
+		WinActivate, %active%
+		WinWaitActive, %active%
 	}
 
 	SaveActiveWindow() {
-		title = WinExist("A")
-		if (!title) {
-			MouseGetPos, , , title
+		activeWin := WinExist("A")
+		if (!activeWin) {
+			MouseGetPos, , , activeWin
 		}
-		WifeWatch.activeWindow := title
+		WifeWatch.activeWindow := activeWin
 	}
 
 	RedrawWatchTime() {

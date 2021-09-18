@@ -1,12 +1,13 @@
-﻿#Include "Alias.ahk"
+﻿#Include "SetUp.ahk"
+#Include "Alias.ahk"
 Class AliasList {
 	static aliasTypes := ["Run", "Script", "BuiltIn", "Site", "Folder", "NewRun", "Etc"]
 	static aliasList := ""	; Alias List 배열
 	static modificationTime := ""
 	static previousAlias := ""
-	static aliasIndex := 0	; 선택하는 Alias의 AliasList 배열에서의 index
-	static aliasId := 0
-	static aliasListFile := A_WorkingDir . "\Lib\_SetUp\AliasList.ini"
+	static aliasId := 0	; 선택하는 Alias의 AliasList 배열에서의 index
+	static isShortCut := false
+	static aliasListFile := ""
 	static onBootAlias := ""
 
 	static __New() {
@@ -25,9 +26,10 @@ Class AliasList {
 		For index, value in AliasList.aliasList
 		{
 			res := value.CheckAlias(command)
-			if (res = "ImmediateRun") {
-				AliasList.aliasIndex := index
-				return ["ImmediateRun"]
+			if (res = "ShortCut") {
+				AliasList.aliasId := index
+				AliasList.isShortCut := true
+				return ["ShortCut"]
 			}
 			if (res = 1) {
 				List1.Push(index)
@@ -41,29 +43,29 @@ Class AliasList {
 		}
 		; 순서 지정 list
 		list := []
-		AliasList.aliasIndex := 0
+		AliasList.aliasId := 0
 		For index, value in List1
 		{
-			if (AliasList.aliasIndex = 0)
-				AliasList.aliasIndex := value
+			if (AliasList.aliasId = 0)
+				AliasList.aliasId := value
 			list.Push(AliasList.aliasList[value].GetAliasesString())
 		}
 		For index, value in List2
 		{
-			if (AliasList.aliasIndex = 0)
-				AliasList.aliasIndex := value
+			if (AliasList.aliasId = 0)
+				AliasList.aliasId := value
 			list.Push(AliasList.aliasList[value].GetAliasesString())
 		}
 		For index, value in List3
 		{
-			if (AliasList.aliasIndex = 0)
-				AliasList.aliasIndex := value
+			if (AliasList.aliasId = 0)
+				AliasList.aliasId := value
 			list.Push(AliasList.aliasList[value].GetAliasesString())
 		}
 		For index, value in List4
 		{
-			if (AliasList.aliasIndex = 0)
-				AliasList.aliasIndex := value
+			if (AliasList.aliasId = 0)
+				AliasList.aliasId := value
 			list.Push(AliasList.aliasList[value].GetAliasesString())
 		}
 		return list
@@ -83,10 +85,13 @@ Class AliasList {
 			option := Trim(SubStr(alias, space + 1))
 		}
 
-		aliasIndex := AliasList.aliasIndex
-		if (AliasList.aliasIndex != 0) {
-			res := AliasList.aliasList[AliasList.aliasIndex].Run(option)
-			if InStr(res[1], "Ok") {
+		aliasId := AliasList.aliasId
+		if (AliasList.aliasId != 0) {
+			res := AliasList.aliasList[AliasList.aliasId].Run(option)
+			if (AliasList.isShortCut) {
+				AliasList.previousAlias	:= ""
+				AliasList.isShortCut := false
+			} else if !InStr(res[1], "Error") {
 				AliasList.previousAlias := command
 			} else {
 				AliasList.previousAlias	:= ""
@@ -99,9 +104,12 @@ Class AliasList {
 
 	static MakeList() {
 		; ini 파일 생성
-		aliasListFile := AliasList.aliasListFile
-		if !FileExist(aliasListFile) {
-			FileInstall("AliasList.ini.Default", aliasListFile, 0)
+		aliasListFile := AliasList.aliasListFile := SetUp.GetFilePath("AliasList")
+		if (!FileExist(aliasListFile)) {
+            pos := InStr(aliasListFile, "\", , -1)
+            if (pos)
+                DirCreate(SubStr(aliasListFile, 1, pos - 1))
+			FileInstall("Src\AliasList.ini", aliasListFile, 0)
 		}
 		; ini 날짜 비교, ini 파일 수정 시만 새로 List 작업
 		fileTime := FileGetTime(aliasListFile, "M")

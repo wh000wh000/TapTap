@@ -6,7 +6,7 @@ import sys
 
 
 def quit_greeting():
-    '''인사 대화 창 종료'''
+    """인사 대화 창 종료"""
     window.quit()
 
 
@@ -22,7 +22,7 @@ for arg in sys.argv:
 
 window = tkinter.Tk()
 window.title("인사 대화 창")
-window.geometry("300x200+400+400")
+window.geometry("500x200+400+400")
 label=tkinter.Label(window, text=인사말)
 label.pack()
 
