@@ -25,25 +25,24 @@ class TapTap {
 	static isArbShowing := false
 	static isInputHighLighting := false
 	static isIniChanged := false
-	static activeWin := ""
+	static activeWindow := ""
 
 	__New() {
 		;@Ahk2Exe-SetMainIcon TapTap.ico
 		if (!A_IsCompiled)
 			TraySetIcon("TapTap.ico")	; TapTap Icon
-
 		this.InitTapTap()
 		this.CreateARB()
 	}
-
 
 	; 프로그램 함수
 	ShowAliasRunBox(_) {
 		if (TapTap.isArbShowing)
 			return
-		TapTap.activeWin := WinExist("A")
-		hotkeyTime := SetUp.Get("TapTapSpeed")
+
 		tapTap_ := SetUp.Get("TapTap")
+		hotkeyTime := SetUp.Get("TapTapSpeed")
+
 		If (tapTap_ and A_ThisHotkey = A_PriorHotkey and A_TimeSincePriorHotkey < SetUp.Get("TapTapSpeed")) {
 			this.ShowARB()
 		} else if (!tapTap_) {
@@ -52,16 +51,22 @@ class TapTap {
 	}
 
 	HideARB() {
-		TapTap.arb.Hide()
 		timer := ObjBindMethod(this, "ArbEscapeTimer")
 		SetTimer(timer, 0)
+		TapTap.arb.Hide()
+		TapTap.isArbShowing := false
 	}
 
 	ArbEscapePressed(_) {
 		this.HideARB()
-		TapTap.isArbShowing := false
 
 		this.RestoreActiveWindow()
+	}
+
+	RestoreActiveWindow() {
+		activeWin := "ahk_id " . TapTap.activeWindow
+		WinActivate(activeWin)
+		WinWaitActive(activeWin)
 	}
 
 	TabProcessTimer() {
@@ -103,25 +108,14 @@ class TapTap {
 			this.UpdateListView(arbEdit)
 	}
 
-	RestoreActiveWindow() {
-		try {
-			WinActivate(TapTap.activeWin)
-			WinWaitActive(TapTap.activeWin)
-		} catch Error as e {
-			MouseGetPos( , , &pos)
-			WinActivate(pos)
-			WinWaitActive(pos)
-		}
-	}
-
 	ArbEnterPressed(abc, i) {
 		this.HideARB()	; ARB 화면 죽인 후, 명령 실행
 		TapTap.arb.Submit()
 		arbEdit := TapTap.arbEdit.value
-		this.RestoreActiveWindow()
 		res := AliasList.RunAlias(arbEdit)
-		TapTap.isArbShowing := false
-		if InStr(res[1], "IniChanged") {
+		if InStr(res[1], "Error") {
+			this.RestoreActiveWindow()
+		} else if InStr(res[1], "IniChanged") {
 			this.SetHotkey()
 			TapTap.isIniChanged := true
 		}
@@ -136,8 +130,8 @@ class TapTap {
 			TapTap.arbList.Opt("+Redraw")
 			return
 		}
-		if (length = 1 and list[1] = "ImmediateRun") {
-			SetTimer(() => ControlSend("{Enter}", "Edit1", TapTap.arb), -200)
+		if (length = 1 and list[1] = "ShortCut") {
+			SetTimer(() => ControlSend("{Enter}", "Edit1", TapTap.arb), -100)
 			return
 		}
 		TapTap.arbList.Opt("-Redraw")
@@ -161,6 +155,7 @@ class TapTap {
 
 	ShowARB() {
 		TapTap.isArbShowing := true
+		TapTap.activeWindow := WinExist("A")
 
 		if (TapTap.isIniChanged) {
 			TapTap.arb.Destroy()
@@ -201,10 +196,13 @@ class TapTap {
 			timer := ObjBindMethod(this, "ArbEscapeTimer")
 			SetTimer(timer, -1000)
 			return
+		} else if (!TapTap.isArbShowing) {
+			return
 		}
 
-		MouseGetPos( , , &pos)
-		TapTap.activeWin := pos
+		activeWin := WinExist("A")
+		TapTap.activeWindow := activeWin
+
 		ControlSend("{Escape}", "Edit1", TapTap.arb)
 	}
 
@@ -227,12 +225,6 @@ class TapTap {
 	}
 
 	InitTapTap() {
-		this.CreateFolder(A_WorkingDir . "\Lib")
-		this.CreateFolder(A_WorkingDir . "\Lib\_SetUp")
-		this.CreateFolder(A_WorkingDir . "\Lib\AHK")
-		this.CreateFolder(A_WorkingDir . "\Lib\Python")
-		; this.CreateFolder(A_WorkingDir . "\Src")
-
 		this.CopyInitFiles()
 		this.SetHotkey()
 		AliasList.RunOnBoot()
@@ -256,62 +248,40 @@ class TapTap {
 	}
 
 	; FileInstall Bug : Source File이 %A_WorkingDir% 이외의 곳에 있으면,
-	; 절대 경로, 상대 경로 전부 안 먹힘.
+	; 절대 경로, 상대 경로 전부 안 먹힘 => AHK v2 로 해결
 	CopyInitFiles() {
-		; 필수 파일
-		destFile := A_WorkingDir . "\Lib\_SetUp\AutoHotkey.exe"
-		if !FileExist(destFile)  {
-			FileInstall("AutoHotkey.v1.1.33.10_U64.bin", destFile, 0)
-		}
-		destFile := A_WorkingDir . "\Lib\_SetUp\TapTap.ini"
-		if !FileExist(destFile) {
-			FileInstall("TapTap.ini.Default", destFile, 0)
-		}
 		; 예제 파일
-		destFile := A_WorkingDir . "\Lib\AHK\ShortCut_1.ahk"
-		if !FileExist(destFile) {
-			FileInstall("ShortCut_1.ahk.Org", destFile, 0)
+		if FileExist(A_WorkingDir . "\Lib\AHK") {
+			destFile := A_WorkingDir . "\Lib\AHK\ShortCut_1.ahk"
+			if !FileExist(destFile) {
+				FileInstall("Src\ShortCut_1.ahk.Org", destFile, 0)
+			}
+			destFile := A_WorkingDir . "\Lib\AHK\ShortCut_Etc.ahk"
+			if !FileExist(destFile) {
+				FileInstall("Src\ShortCut_Etc.ahk.Org", destFile, 0)
+			}
+			destFile := A_WorkingDir . "\Lib\AHK\ShortCut_Help.ahk"
+			if !FileExist(destFile) {
+				FileInstall("Src\ShortCut_Help.ahk.Org", destFile, 0)
+			}
+			destFile := A_WorkingDir . "\Lib\AHK\ScreenSaver.ahk"
+			if !FileExist(destFile) {
+				FileInstall("Src\ScreenSaver.ahk.Org", destFile, 0)
+			}
+			destFile := A_WorkingDir . "\Lib\AHK\WifeWatch.ahk"
+			if !FileExist(destFile) {
+				FileInstall("Src\WifeWatch.ahk.Org", destFile, 0)
+			}
+			destFile := A_WorkingDir . "\Lib\AHK\TapTap_Boot.ahk"
+			if !FileExist(destFile) {
+				FileInstall("Src\TapTap_Boot.ahk.Org", destFile, 0)
+			}
 		}
-		destFile := A_WorkingDir . "\Lib\AHK\ShortCut_Etc.ahk"
-		if !FileExist(destFile) {
-			FileInstall("ShortCut_Etc.ahk.Org", destFile, 0)
-		}
-		destFile := A_WorkingDir . "\Lib\AHK\ShortCut_Help.ahk"
-		if !FileExist(destFile) {
-			FileInstall("ShortCut_Help.ahk.Org", destFile, 0)
-		}
-		destFile := A_WorkingDir . "\Lib\AHK\ScreenSaver.ahk"
-		if !FileExist(destFile) {
-			FileInstall("ScreenSaver.ahk.Org", destFile, 0)
-		}
-		destFile := A_WorkingDir . "\Lib\AHK\WifeWatch.ahk"
-		if !FileExist(destFile) {
-			FileInstall("WifeWatch.ahk.Org", destFile, 0)
-		}
-		destFile := A_WorkingDir . "\Lib\AHK\TapTap_Boot.ahk"
-		if !FileExist(destFile) {
-			FileInstall("TapTap_Boot.ahk.Org", destFile, 0)
-		}
-		destFile := A_WorkingDir . "\Lib\Python\HelloWorld.py"
-		if !FileExist(destFile) {
-			FileInstall("HelloWorld.py", destFile, 0)
-		}
-		; 소스 파일
-		; destFile := A_WorkingDir . "\Src.zip"
-		; if !FileExist(destFile) {
-		; 	FileInstall("Src.zip", destFile, 0)
-		; }
-		; TapTap.ahk
-		; TapTap.ico
-		; AliasList.ahk
-		; Alias.ahk
-		; SetUp.ahk
-		; README.md
-	}
-
-	CreateFolder(folder) {
-		if !FileExist(folder) {
-			DirCreate(folder)
+		if FileExist(A_WorkingDir . "\Lib\Python") {
+			destFile := A_WorkingDir . "\Lib\Python\HelloWorld.py"
+			if !FileExist(destFile) {
+				FileInstall("Src\HelloWorld.py", destFile, 0)
+			}
 		}
 	}
 }

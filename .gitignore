@@ -1,5 +1,5 @@
 # TapTap .gitignore
+Lib/_Bin/
 Lib/AHK/
 Lib/Python/
 AutoHotkey/
-Src.zip

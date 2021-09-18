@@ -1,4 +1,5 @@
-﻿class Alias {
+﻿#Include "SetUp.ahk"
+class Alias {
 	static lowerCase := "abcdefghijklmnopqrstuvwxyz."
 	static iniFiles := ["AliasList", "Ini"]
 	static builtInFuncs := ["EditAliasListIni", "EditTapTapIni"]
@@ -36,16 +37,17 @@
 
 	EditTapTapIni(_) {
 		editor := SetUp.Get("Editor")
-		tapTapIniFile := SetUp.GetFilePath("IniFile")
+		tapTapIniFile := SetUp.iniFile
 		RunWait(editor . " " . tapTapIniFile)
-		return "IniChanged"
+		SetUp.isIniChanged := true
+		return "Ok, IniChanged"
 	}
 
 	EditAliasListIni(_) {
 		editor := SetUp.Get("Editor")
-		aliasListIniFile := SetUp.GetFilePath("AliasListIniFile")
+		aliasListIniFile := SetUp.GetFilePath("AliasList")
 		Run(editor . " " . AliasListIniFile)
-		return ""
+		return "Ok"
 	}
 
 	Run(option) {
@@ -53,36 +55,32 @@
 		command := this.command
 		defaultOption := this.option
 		workingDir := this.workingDir
-		res := ""
+		res := aliasType
 		pid := ""
 		try {
 			switch aliasType {
 				case "Run", "NewReun", "Site":
 					Run(command . " " . option . defaultOption, workingDir, &pid)
-					res := "Ok"
 				case "Script":
 					if (StrLen(command) > 4 and SubStr(command, StrLen(command) - 3) = ".ahk") {
-						autoHotkey := SetUp.GetFilePath("AutoHotkey")
-						ahkFile := SetUp.GetAhkFilePath(command)
+						autoHotkey := SetUp.GetFilePath("AutoHotkeyExe")
+						ahkFile := SetUp.GetScriptPath(command)
 						command := autoHotkey . " /CP65001 " . ahkFile
 					} else if (StrLen(command) > 3 and SubStr(command, StrLen(command) - 2) = ".py") {
-						command := SetUp.GetPythonFilePath(command)
+						command := SetUp.GetScriptPath(command)
 					}
 					Run(command . " " . option . defaultOption, workingDir, &pid)
-					res := aliasType
 				case "BuiltIn":
 					builtInFunc := ObjBindMethod(this, command)
-					res := aliasType . ", " . builtInFunc(option)
+					res .= ", " . builtInFunc(option)
 				case "Folder":
-					Run("Explorer " . command . option . defaultOption)
-					res := aliasType
+					Run("Explorer " . command . option . defaultOption, , &pid)
 				default:	; Etc
 					Run(command . " " . option . " " . defaultOption, workingDir, &pid)
-					res := aliasType
 			}
 			if (pid)
-				WinWait("ahk_pid " . pid)
-			return [res, pid]
+				WinWaitActive("ahk_pid " . pid)
+			return [res . ", Ok", pid]
 		} catch Error as e {
 			msg := "명령어 타입: " . aliasType . "`n"
 			msg .= "명령어: " . command . "`n"
@@ -90,7 +88,7 @@
 			msg .= "작업 폴더: " . workingDir . "`n"
 			msg .= e.Message
 			MsgBox(msg, "명령어 실행 에러", 16)
-			return "Error"
+			return [res . ", Error", ""]
 		}
 	}
 
@@ -98,7 +96,7 @@
 		; 단축키: 즉각 실행 명령
 		aliasLen := StrLen(alias_)
 		if (alias_ and aliasLen = 1 and !InStr(Alias.lowerCase, alias_, true) and SubStr(this.aliases[1], 1, 1) == alias_) {	; CaseSensitive
-			return "ImmediateRun"
+			return "ShortCut"
 		}
 
 		; 첫 별칭에서 처음부터 일치하는 경우: 1

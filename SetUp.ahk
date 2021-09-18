@@ -1,9 +1,8 @@
 ﻿class SetUp {
+    static iniFile := ""
+    static isIniChanged := false
     static dict := {
-        WorkingFolder : "",
-        IniFile : "WorkingFolder\Lib\_SetUp\TapTap.ini",
-        IniModifiedTime : "",
-        AliasListModifiedTime : ""
+        IniModifiedTime : ""
     }
 
     static __new() {
@@ -15,7 +14,7 @@
         dirPath := "WorkingFolder"
         filePath := SetUp.dict.%fileName%
         if InStr(filePath, dirPath)
-            filePath := StrReplace(filePath, dirPath, SetUp.dict.%dirPath%)
+            filePath := StrReplace(filePath, dirPath, A_WorkingDir)
         return filePath
     }
 
@@ -27,7 +26,7 @@
             dirPath := "WorkingFolder"
             ahkDir := SetUp.dict.AhkFolder
             if InStr(ahkDir, dirPath)
-                ahkDir := StrReplace(ahkDir, dirPath, SetUp.dict.%dirPath%)
+                ahkDir := StrReplace(ahkDir, dirPath, A_WorkingDir)
             filePath := ahkDir . "\" . ahkFile
         }
         return filePath
@@ -41,14 +40,35 @@
             dirPath := "WorkingFolder"
             pyDir := SetUp.dict.PythonFolder
             if InStr(pyDir, dirPath)
-                pyDir := StrReplace(pyDir, dirPath, SetUp.dict.%dirPath%)
+                pyDir := StrReplace(pyDir, dirPath, A_WorkingDir)
             filePath := pyDir . "\" . pyFile
         }
         return filePath
     }
 
+    ; 탭탭이 Script 전용 폴더에서 Script 파일 패스 찾기
+    static GetScriptPath(script) {
+        if (!InStr(script, "\") and (pos:= InStr(script, "."))) {
+            fType := SubStr(script, pos + 1)
+            if (fType = "ahk") {
+                folder := SetUp.dict.AhkFolder
+            } else if (fType = "py") {
+                folder := SetUp.dict.PythonFolder
+            }
+            if (folder) {
+                dirPath := "WorkingFolder"
+                if InStr(folder, dirPath)
+                    folder := StrReplace(folder, dirPath, A_WorkingDir)
+                return folder . "\" . script
+            }
+        }
+        return script
+    }
+
     static Get(key) {
-        SetUp.MakeDict()
+        if (SetUp.isIniChanged) {
+            SetUp.MakeDict()
+        }
 
         try {
             res := SetUp.dict.%key%
@@ -61,12 +81,11 @@
 
     static MakeDict() {
         ; ini 파일 생성
-        if (!SetUp.dict.WorkingFolder) {
-            SetUp.dict.WorkingFolder := A_WorkingDir
-        }
-        setUpFile := SetUp.GetFilePath("IniFile")
+        setUpFile := SetUp.IniFile := A_WorkingDir . "\Lib\TapTap.ini"
+        SetUp.dict.WorkingFolder := A_WorkingDir
         if !FileExist(setUpFile) {
-            FileInstall("TapTap.ini.Default", setUpFile, 0)
+            SetUp.CreateFolder(A_WorkingDir . "\Lib")
+            FileInstall("Src\TapTap.ini", setUpFile, 0)
 		}
         ; ini 날짜 비교, ini 파일 수정 시만 새로 List 작업
 		fileTime := FileGetTime(setUpFile, "M")
@@ -80,13 +99,8 @@
         newDict.Hotkey := IniRead(setUpFile, section, "Hotkey", "Control")
         newDict.TapTap := IniRead(setUpFile, section, "TapTap", "false") = "false" ? false: true
         newDict.TapTapSpeed := IniRead(setUpFile, section, "TapTapSpeed", 350)
-        newDict.WorkingFolder := IniRead(setUpFile, section, "WorkingFolder", "")
-        if (!newDict.WorkingFolder) {
-            newDict.WorkingFolder := A_WorkingDir
-            IniWrite(A_WorkingDir, setUpFile, section, "WorkingFolder")
-        }
-        newDict.TapTapIniFile := IniRead(setUpFile, section, "IniFile", "WorkingFolder\Lib\_SetUp\TapTap.ini")
-        newDict.AliasListIniFile := IniRead(setUpFile, section, "AliasListIniFile", "WorkingFolder\Lib\_SetUp\AliasList.ini")
+        IniWrite(A_WorkingDir, setUpFile, section, "WorkingFolder")
+        newDict.AliasList := IniRead(setUpFile, section, "AliasList", "WorkingFolder\Lib\AliasList.ini")
         newDict.ArbWidth := IniRead(setUpFile, section, "ArbWidth", "320")
         newDict.ArbEditFont := IniRead(setUpFile, section, "ArbEditFont", "나눔고딕")
         newDict.ArbEditFontSize := IniRead(setUpFile, section, "ArbEditFontSize", "S18")
@@ -97,10 +111,35 @@
         newDict.ArbListFontWeight := IniRead(setUpFile, section, "ArbListFontSize", "W800")
         newDict.ArbMoveX := IniRead(setUpFile, section, "ArbMoveX", "410")
         newDict.ArbMoveY := IniRead(setUpFile, section, "ArbMoveY", "220")
-        newDict.AutoHotkey := IniRead(setUpFile, section, "AutoHotkey", "WorkingFolder\Lib\_SetUp\AutoHotkey.exe")
-        newDict.AhkFolder := IniRead(setUpFile, section, "AhkFolder", "WorkingFolder\Lib\AHK")
-        newDict.PythonFolder := IniRead(setUpFile, section, "PythonFolder", "WorkingFolder\Lib\Python")
+        newDict.AutoHotkeyExe := IniRead(setUpFile, section, "AutoHotkeyExe", "")
+        newDict.AhkFolder := IniRead(setUpFile, section, "AhkFolder", "")
+        newDict.PythonFolder := IniRead(setUpFile, section, "PythonFolder", "")
         newDict.Editor := IniRead(setupFile, section, "Editor", "notepad.exe")
-        SetUp.Dict := newDict
+        SetUp.dict := newDict
+        SetUp.isIniChanged := false
+        if (newDict.AhkFolder) {
+            ahk := SetUp.GetScriptPath("a.ahk")
+            pos := InStr(ahk, "\", , -1)
+            if (pos)
+                SetUp.CreateFolder(SubStr(ahk, 1, pos - 1))
+        }
+        if (newDict.PythonFolder) {
+            py := SetUp.GetScriptPath("a.py")
+            pos := InStr(py, "\", , -1)
+            if (pos)
+                SetUp.CreateFolder(SubStr(py, 1, pos - 1))
+        }
+        ahkExe := SetUp.GetFilePath("AutoHotkeyExe")
+        if (ahkExe and !FileExist(ahkExe)) {
+            pos := InStr(ahkExe, "\", , -1)
+            SetUp.CreateFolder(SubStr(ahkExe, 1, pos - 1))
+            FileInstall("Src\AutoHotkey.v1.1.33.10_U64.bin", ahkExe, 0)
+		}
     }
+
+    static CreateFolder(folder) {
+		if !FileExist(folder) {
+			DirCreate(folder)
+		}
+	}
 }
