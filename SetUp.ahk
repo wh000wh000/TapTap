@@ -18,34 +18,6 @@
         return filePath
     }
 
-    ; 탭탭이 AHK 전용 폴더에서 .ahk 파일 패스 찾기
-    static GetAhkFilePath(ahkFile) {
-        if InStr(ahkFile, "\") {
-            filePath := ahkFile
-        } else {
-            dirPath := "WorkingFolder"
-            ahkDir := SetUp.dict.AhkFolder
-            if InStr(ahkDir, dirPath)
-                ahkDir := StrReplace(ahkDir, dirPath, A_WorkingDir)
-            filePath := ahkDir . "\" . ahkFile
-        }
-        return filePath
-    }
-
-    ; 탭탭이 AHK 전용 폴더에서 .py 파일 패스 찾기
-    static GetPythonFilePath(pyFile) {
-        if InStr(pyFile, "\") {
-            filePath := pyFile
-        } else {
-            dirPath := "WorkingFolder"
-            pyDir := SetUp.dict.PythonFolder
-            if InStr(pyDir, dirPath)
-                pyDir := StrReplace(pyDir, dirPath, A_WorkingDir)
-            filePath := pyDir . "\" . pyFile
-        }
-        return filePath
-    }
-
     ; 탭탭이 Script 전용 폴더에서 Script 파일 패스 찾기
     static GetScriptPath(script) {
         if (!InStr(script, "\") and (pos:= InStr(script, "."))) {
@@ -113,6 +85,7 @@
         newDict.ArbMoveY := IniRead(setUpFile, section, "ArbMoveY", "220")
         newDict.AutoHotkeyExe := IniRead(setUpFile, section, "AutoHotkeyExe", "")
         newDict.AhkFolder := IniRead(setUpFile, section, "AhkFolder", "")
+        newDict.PythonExe := IniRead(setUpFile, section, "PythonExe", "")
         newDict.PythonFolder := IniRead(setUpFile, section, "PythonFolder", "")
         newDict.Editor := IniRead(setupFile, section, "Editor", "notepad.exe")
         SetUp.dict := newDict

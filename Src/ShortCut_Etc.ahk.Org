@@ -8,9 +8,10 @@
 ; 기능: AliasList.ini에 미리 지정한 인자를 전달 받아 영문자 한 글자 단축키를 호출함.
 ShortCut_Etc:
 {
-    arg := A_Args[1]
+    shortCut := A_Args[1]
+    arg := A_Args[2]
 
-    shortCutFunc := Func("ShortCut_" . arg)
+    shortCutFunc := Func("ShortCut_" . shortCut)
 
     %shortCutFunc%(arg)
 }
@@ -24,5 +25,6 @@ ShortCut_A(option) {
         msg := greeting . "명령어 인자: " . option
     else
         msg := greeting
+
     MsgBox,  , 인사 대화 창 ('%option%'), %msg%, 5
 }
