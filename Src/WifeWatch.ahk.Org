@@ -4,7 +4,6 @@
 	static activeWindow := ""
 
 	__New() {
-		thisObject := this
 		this.SaveActiveWindow()
 
 		thisObject := this

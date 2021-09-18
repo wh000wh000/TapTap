@@ -67,7 +67,8 @@ class Alias {
 						ahkFile := SetUp.GetScriptPath(command)
 						command := autoHotkey . " /CP65001 " . ahkFile
 					} else if (StrLen(command) > 3 and SubStr(command, StrLen(command) - 2) = ".py") {
-						command := SetUp.GetScriptPath(command)
+						python := SetUp.GetFilePath("PythonExe")
+						command := python . " " SetUp.GetScriptPath(command)
 					}
 					Run(command . " " . option . defaultOption, workingDir, &pid)
 				case "BuiltIn":
