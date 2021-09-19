@@ -143,17 +143,145 @@ class Alias {
 		return aliasIndex
 	}
 
+	ParseAlias(token) {
+		; 첫 번째 Aliases의 첫 글자가 영문자 소문자가 아니면서, 일치하는 경우: "ShortCut"
+		; Return:
+		; 첫 별칭에서 처음부터 일치하는 경우: 1
+		; 2번째 이후 별칭에서 처음부터 일치하는 경우: 2
+		; 중간의 대문자가 일치하는 경우: 3
+		; 아무 곳이나 일치하는 경우: 4
+		; 일치하는 곳이 없는 경우: 5
+		; token 이 "" 인 경우: 6
+		if ((tokenLen := StrLen(token)) = 0)
+			return 6
+		if (tokenLen = 1 and !InStr(Alias.lowerCase, token, true) and SubStr(this.aliases[1], 1, 1) == token) {	; CaseSensitive
+			return "ShortCut"
+		}
+
+		tokenIndex := 5
+		For index, value in this.aliases
+		{
+			if (left := InStr(value, "[")) {
+				right := InStr(value, "]")
+				encrypt := SubStr(value, left, right - left + 1)	; [] 내의 내용 보관
+				value := Trim(StrReplace(value, encrypt, ""))
+			}
+			pos := InStr(value, token)
+			if (pos = 1) {
+				if (index = 1) {
+					return 1
+				} else {
+					return 2
+				}
+			}
+			ch := SubStr(token, tokenLen)
+			if (!InStr(Alias.lowerCase, ch, true) and tokenLen > 1) {
+				; 중간 대문자 찾기
+				p := Instr(value, SubStr(token, 1, tokenLen - 1))
+				toSeek := p + tokenLen - 1
+				chPos := InStr(SubStr(value, toSeek), ch, true)
+				if (p and chPos) {
+					tokenIndex := 3
+				}
+			}
+			if (pos and tokenIndex = 5) {
+				tokenIndex := 4
+			}
+		}
+		return tokenIndex
+	}
+
+	ParseOption(option) {
+		; option이 대문자 한 자일 경우, 모든 tokens에 대해 일치하는 대문자 일치 여부 체크?
+		; 첫 번째 Tokens의 첫 글자가 영문자 소문자가 아니면서, 일치하는 경우: "ShortCut"
+		; Tokens의 첫 글자가 영문자 소문자가 아니면서, 일치하는 경우: [0, index]
+		; 첫 별칭에서 처음부터 일치하는 경우: [1, index]
+		; 2번째 이후 별칭에서 처음부터 일치하는 경우: [2, index]
+		; 중간의 대문자가 일치하는 경우: [3, index]
+		; 아무 곳이나 일치하는 경우: [4, index]
+		; 일치하는 곳이 없는 경우: [5, index]
+		; option 이 "" 인 경우: [6, index]
+		if (!this.optArray)
+			return [[this.GetAliasesString()], 0]
+		list := []
+		if (option = " ") {
+			for _, value in this.optArray {
+				list.Push(value)
+			}
+			return [list, 1]
+		} else if (SubStr(option, 1, 2) = "  ") {
+			return [[], 0]
+		}
+		option := Trim(option)
+		optionLen := StrLen(option)
+		if (optionLen = 1 and !InStr(Alias.lowerCase, option, true)) {
+			for i, value in this.optArray {
+				if InStr(value, option, true) {	; CaseSensitive
+					return [[value], i]
+				}
+			}
+		}
+		ch := SubStr(option, optionLen)
+		index := 0
+		if (!InStr(Alias.lowerCase, ch, true) and optionLen > 1) {
+			for i, value in this.optArray {
+				; 중간 대문자 찾기
+				p := Instr(value, SubStr(option, 1, optionLen - 1))
+				toSeek := p + optionLen - 1
+				chPos := InStr(SubStr(value, toSeek), ch, true)
+				if (p and chPos) {
+					if (!index)
+						index := i
+					list.Push(value)
+				}
+			}
+			return [list, index]
+		}
+		for i, value in this.optArray {
+			if InStr(value, option) {
+				if (!index)
+					index := i
+				list.Push(value)
+			}
+		}
+		return [list, index]
+	}
+
 	GetAliasesString() {
 		return this.GetStringFromArray(this.aliases)
 	}
 
-	GetArrayFromString(str) {
+	GetArrayFromString(str, isAlias := false) {
+		encrypt := ""
+		if (isAlias and (left := InStr(str, "["))) {
+			try {
+				if ((right := InStr(str, "]")) = 0)
+					Throw Error("별칭 구문 해석 에러`n']' 기호가 없음.")
+				encrypt := SubStr(str, left, right - left + 1)	; [] 내의 내용 보관
+				opts := Trim(SubStr(encrypt, 2, StrLen(encrypt) - 2))
+				if (opts) {
+					this.optArray := []
+					Loop Parse, opts, "CSV"
+					{
+						if Trim(A_LoopField) {
+							this.optArray.Push(Trim(A_LoopField))
+						}
+					}
+				}
+				str := StrReplace(str, encrypt, "EncryptedOption")
+			} catch Error as e {
+				MsgBox(e.Message, "Alias Parsing Error", 16)
+				ExitApp
+			}
+		}
 		array_ := []
-		outArray := StrSplit(str, ",")
-		For index, value in outArray
+		Loop Parse, str, "CSV"
 		{
-			elem := Trim(value)
-			array_.push(elem)
+			if InStr(A_LoopField, "EncryptedOption", true) {
+				array_.push(Trim(StrReplace(A_LoopField, "EncryptedOption", encrypt, 1)))
+			} else if Trim(A_LoopField) {
+				array_.push(Trim(A_LoopField))
+			}
 		}
 		return array_
 	}
@@ -189,8 +317,9 @@ class Alias {
 	}
 
 	__New(aliasType, aliasesLine, commandLine) {
+		this.optArray := ""
 		this.aliasType := aliasType
-		this.aliases := this.GetArrayFromString(aliasesLine)
+		this.aliases := this.GetArrayFromString(aliasesLine, true)
 
 		typeArray := this.GetArrayFromString(commandLine)
 		if (typeArray.Length) {

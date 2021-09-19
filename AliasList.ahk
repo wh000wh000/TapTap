@@ -6,6 +6,7 @@ Class AliasList {
 	static modificationTime := ""
 	static previousAlias := ""
 	static aliasId := 0	; 선택하는 Alias의 AliasList 배열에서의 index
+	static optionId := 0
 	static isShortCut := false
 	static aliasListFile := ""
 	static onBootAlias := ""
@@ -14,24 +15,43 @@ Class AliasList {
 		AliasList.MakeList()
 	}
 
-	static ListAlias(alias) {
+	static ListAlias(alias_) {
 		AliasList.MakeList()
-
-		command := Trim(alias)
-		; alias 일치 list 생성
+		; command, option 분리
+		option := ""
+		if (pos := InStr(alias_, " ")) {
+			command := Trim(SubStr(alias_, 1, pos - 1))
+			if (!command) {
+				AliasList.aliasId := 0
+				return []
+			}
+			option := SubStr(alias_, pos)
+		} else {
+			command := alias_
+		}
+		; option 처리 먼저
+		if (option and AliasList.aliasId) {
+			list := AliasList.aliasList[AliasList.aliasId].ParseOption(option)
+			AliasList.optionId := list[2]
+			return list[1]
+		} else {
+			AliasList.optionId := 0
+		}
+		; alias_ 일치 list 생성
 		List1 := []
 		List2 := []
 		List3 := []
 		List4 := []
 		For index, value in AliasList.aliasList
 		{
-			res := value.CheckAlias(command)
+			; res := value.CheckAlias(command)
+			res := value.ParseAlias(command)
 			if (res = "ShortCut") {
 				AliasList.aliasId := index
 				AliasList.isShortCut := true
 				return ["ShortCut"]
 			}
-			if (res = 1) {
+			if (res = 6 or res = 1) {
 				List1.Push(index)
 			} else if (res = 2) {
 				List2.Push(index)
@@ -68,6 +88,7 @@ Class AliasList {
 				AliasList.aliasId := value
 			list.Push(AliasList.aliasList[value].GetAliasesString())
 		}
+		AliasList.isShortCut := res = 6 ? true: false	; 다짜고짜 Tab, Enter 누를 때
 		return list
 	}
 
@@ -76,7 +97,9 @@ Class AliasList {
 	}
 
 	static RunAlias(alias) {
-		command := Trim(alias)
+		if (alias and (command := Trim(alias)) = "") {	; Tab 처리
+			return ["Error", ""]
+		}
 		option := ""
 		; 명령어와 옵션 분리
 		space := InStr(alias, " ")
@@ -87,6 +110,9 @@ Class AliasList {
 
 		aliasId := AliasList.aliasId
 		if (AliasList.aliasId != 0) {
+			if (optionId := AliasList.optionId) {
+				option := AliasList.aliasList[AliasList.aliasId].optArray[optionId]
+			}
 			res := AliasList.aliasList[AliasList.aliasId].Run(option)
 			if (AliasList.isShortCut) {
 				AliasList.previousAlias	:= ""
