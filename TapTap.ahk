@@ -104,7 +104,7 @@ class TapTap {
 			return
 		}
 		; 명령어 옵션을 입력하는 경우를 제외하고, 리스트 Update
-		if (StrLen(arbEdit) = 1 or InStr(arbEdit, " ") = 0)
+		; if (StrLen(arbEdit) = 1 or InStr(arbEdit, " ") = 0)
 			this.UpdateListView(arbEdit)
 	}
 
@@ -188,7 +188,7 @@ class TapTap {
 		}
 
 		timer := ObjBindMethod(this, "ArbEscapeTimer")
-		SetTimer(timer, -1000)
+		; SetTimer(timer, -1000)
 	}
 
 	ArbEscapeTimer() {

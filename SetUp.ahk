@@ -20,7 +20,7 @@
 
     ; 탭탭이 Script 전용 폴더에서 Script 파일 패스 찾기
     static GetScriptPath(script) {
-        if (!InStr(script, "\") and (pos:= InStr(script, "."))) {
+        if (pos:= InStr(script, ".", , -1)) {
             fType := SubStr(script, pos + 1)
             if (fType = "ahk") {
                 folder := SetUp.dict.AhkFolder
