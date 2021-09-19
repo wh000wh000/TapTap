@@ -1,15 +1,16 @@
 ﻿Class ScreenSaver {
 	static thisObject := ""
 	static isScreenSavering := false
-	static timer := ""
-	static activeWindow := ""
+	static right := ""
+	static bottom := ""
 
 	__New() {
-		this.SaveActiveWindow()
+		WinGetPos(, , &w, &h, "Program Manager")
+		ScreenSaver.right := w - 1
+		ScreenSaver.bottom := h - 1
 		ScreenSaver.timer := ObjBindMethod(this, "RunScreenSaver")
 		this.SetScreenSaverTime()
 		thisObject := this
-		this.RestoreActiveWindow()
 	}
 
 	SetScreenSaverTime(interval := 300) {
@@ -20,28 +21,42 @@
 				baseInterval := interval
 			}
 		}
-		timer := ScreenSaver.timer
-		SetTimer, % timer, % baseInterval
+		; timer := ScreenSaver.timer
+		SetTimer(ScreenSaver.timer, baseInterval) ;, % timer, % baseInterval
 	}
 
-	RestoreActiveWindow() {
-		SetTitleMatchMode, 2
-		WinActivate, % ScreenSaver.activeWindow
-	}
-
-	SaveActiveWindow() {
-		title = WinExist("A")
-		if (!title) {
-			MouseGetPos, , , title
+	IsMouseOn() {
+		if (SetUp.Get("NeedScreenSavering") = "false") {
+			return false
 		}
-		ScreenSaver.activeWindow := title
+		onType := SetUp.Get("ScreenSaverOnMouse")
+		CoordMode("Mouse", "Screen")
+		MouseGetPos(&outX, &outY)
+		switch (onType) {
+			case "LeftTop":
+				return outX = 0 and outY = 0
+			case "RightTop":
+				return outX = ScreenSaver.right and outY = 0
+			case "LeftBottom":
+				return outX = 0 and ScreenSaver.bottom = outY
+			case "RightBottom":
+				return outX = ScreenSaver.right and outY = ScreenSaver.bottom
+			case "LeftWall":
+				return outX = 0
+			case "RightWall":
+				return outX = ScreenSaver.right
+			case "TopWall":
+				return outY = 0
+			case "BottomWall":
+				return outY = ScreenSaver.bottom
+			default:
+				return false
+		}
 	}
 
 	RunScreenSaver() {
 		static screenSaverTime := 0
-		CoordMode, Mouse, Screen
-		MouseGetPos, outX, outY
-		if (outX = 0 && outY = 0) {
+		if this.IsMouseOn() {
 			If (ScreenSaver.isScreenSavering) {
 				this.SetScreenSaverTime(3000)
 				return

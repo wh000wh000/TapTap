@@ -9,4 +9,5 @@
   - 기동 시, 실행할 프로그램 지정 기능
   - TapTap에 사용할 별칭(별명, Alias) 및 핫키, 단축키 실시간 변경 기능
   - 일반 응용 프로그램은 물론, Python, AutoHotkey Script 사용 기능
+  - Screen Saver 기능
   - 프로그램 실행 예약 기능

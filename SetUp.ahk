@@ -88,6 +88,8 @@
         newDict.ArbListBackground := IniRead(setUpFile, section, "ArbListBackground", "1E1E1E")
         newDict.ArbMoveX := IniRead(setUpFile, section, "ArbMoveX", "410")
         newDict.ArbMoveY := IniRead(setUpFile, section, "ArbMoveY", "220")
+        newDict.NeedScreenSavering := IniRead(setUpFile, section, "NeedScreenSavering", "true")
+        newDict.ScreenSaverOnMouse := IniRead(setUpFile, section, "ScreenSaverOnMouse", "LeftTop")
         newDict.AutoHotkeyExe := IniRead(setUpFile, section, "AutoHotkeyExe", "")
         newDict.AhkFolder := IniRead(setUpFile, section, "AhkFolder", "")
         newDict.PythonExe := IniRead(setUpFile, section, "PythonExe", "")

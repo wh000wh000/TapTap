@@ -6,7 +6,9 @@ SendMode("Input")  ; Recommended for new scripts due to its superior speed and r
 FileEncoding("UTF-8")
 
 #Include "SetUp.ahk"
+#Include "ScreenSaver.ahk"
 #Include "AliasList.ahk"
+
 TapTap()
 ; CapsLock 키 변경 to LControl by KeyTweak
 ; CapsLock Toggle 키 (CapsLock + 우측 Shift)
@@ -226,6 +228,7 @@ class TapTap {
 	InitTapTap() {
 		this.CopyInitFiles()
 		this.SetHotkey()
+		ScreenSaver()
 		AliasList.RunOnBoot()
 	}
 
@@ -262,10 +265,6 @@ class TapTap {
 			destFile := A_WorkingDir . "\Lib\AHK\ShortCut_Help.ahk"
 			if !FileExist(destFile) {
 				FileInstall("Src\ShortCut_Help.ahk.Org", destFile, 0)
-			}
-			destFile := A_WorkingDir . "\Lib\AHK\ScreenSaver.ahk"
-			if !FileExist(destFile) {
-				FileInstall("Src\ScreenSaver.ahk.Org", destFile, 0)
 			}
 			destFile := A_WorkingDir . "\Lib\AHK\WifeWatch.ahk"
 			if !FileExist(destFile) {
