@@ -20,7 +20,7 @@
 
     ; 탭탭이 Script 전용 폴더에서 Script 파일 패스 찾기
     static GetScriptPath(script) {
-        if (pos:= InStr(script, ".", , -1)) {
+        if (!InStr(script, ":") and pos:= InStr(script, ".", , -1)) {
             fType := SubStr(script, pos + 1)
             if (fType = "ahk") {
                 folder := SetUp.dict.AhkFolder
@@ -73,14 +73,19 @@
         newDict.TapTapSpeed := IniRead(setUpFile, section, "TapTapSpeed", 350)
         IniWrite(A_WorkingDir, setUpFile, section, "WorkingFolder")
         newDict.AliasList := IniRead(setUpFile, section, "AliasList", "WorkingFolder\Lib\AliasList.ini")
+        newDict.ArbBackground := IniRead(setUpFile, section, "ArbBackground", "1E1E1E")
         newDict.ArbWidth := IniRead(setUpFile, section, "ArbWidth", "320")
         newDict.ArbEditFont := IniRead(setUpFile, section, "ArbEditFont", "나눔고딕")
         newDict.ArbEditFontSize := IniRead(setUpFile, section, "ArbEditFontSize", "S18")
         newDict.ArbEditFontWeight := IniRead(setUpFile, section, "ArbEditFontWeight", "W1000")
+        newDict.ArbEditColor := IniRead(setUpFile, section, "ArbEditColor", "D4D4D4")
+        newDict.ArbEditBackground := IniRead(setUpFile, section, "ArbEditBackground", "1E1E1E")
         newDict.ArbListRows := IniRead(setUpFile, section, "ArbListRows", "6")
         newDict.ArbListFont := IniRead(setUpFile, section, "ArbListFont", "나눔고딕")
         newDict.ArbListFontSize := IniRead(setUpFile, section, "ArbListFontSize", "S12")
         newDict.ArbListFontWeight := IniRead(setUpFile, section, "ArbListFontSize", "W800")
+        newDict.ArbListColor := IniRead(setUpFile, section, "ArbListColor", "CCCCCC")
+        newDict.ArbListBackground := IniRead(setUpFile, section, "ArbListBackground", "1E1E1E")
         newDict.ArbMoveX := IniRead(setUpFile, section, "ArbMoveX", "410")
         newDict.ArbMoveY := IniRead(setUpFile, section, "ArbMoveY", "220")
         newDict.AutoHotkeyExe := IniRead(setUpFile, section, "AutoHotkeyExe", "")

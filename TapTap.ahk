@@ -79,7 +79,7 @@ class TapTap {
 		ControlSend("{End}{Space}", "Edit1", TapTap.arb)
 	}
 
-	ArbEditChanged(ab, _) {
+	ArbEditChanged(x, _) {
 		TapTap.arb.Submit(false)
 		arbEdit := TapTap.arbEdit.value
 
@@ -103,12 +103,10 @@ class TapTap {
 			SetTimer(() => ControlSend("{Backspace}{Enter}", "Edit1", TapTap.arb), -100)
 			return
 		}
-		; 명령어 옵션을 입력하는 경우를 제외하고, 리스트 Update
-		; if (StrLen(arbEdit) = 1 or InStr(arbEdit, " ") = 0)
-			this.UpdateListView(arbEdit)
+		this.UpdateListView(arbEdit)
 	}
 
-	ArbEnterPressed(abc, i) {
+	ArbEnterPressed(x, _) {
 		this.HideARB()	; ARB 화면 죽인 후, 명령 실행
 		TapTap.arb.Submit()
 		arbEdit := TapTap.arbEdit.value
@@ -140,7 +138,7 @@ class TapTap {
 		{
 			TapTap.arbList.Add(, val)
 		}
-		TapTap.arbList.Modify(1, "Select")
+		; TapTap.arbList.Modify(1, "Select")
 		TapTap.arbList.Opt("+Redraw")
 	}
 
@@ -188,7 +186,7 @@ class TapTap {
 		}
 
 		timer := ObjBindMethod(this, "ArbEscapeTimer")
-		; SetTimer(timer, -1000)
+		SetTimer(timer, -1000)
 	}
 
 	ArbEscapeTimer() {
@@ -208,15 +206,16 @@ class TapTap {
 
 	CreateARB() {
 		TapTap.arb := Gui("+AlwaysOnTop -Caption +ToolWindow", TapTap.title)
+		TapTap.arb.BackColor := SetUp.Get("ArbBackground")
 		TapTap.arb.SetFont(SetUp.Get("ArbEditFontSize") . " " . SetUp.Get("ArbEditFontWeight"), SetUp.Get("ArbEditFont"))
-		TapTap.arb.MarginX := "1", TapTap.arb.MarginY := "1"
-		TapTap.arbEdit := TapTap.arb.Add("Edit", "w" . SetUp.Get("ArbWidth") . " r1 WantTab")
+		TapTap.arb.MarginX := "1"
+		TapTap.arb.MarginY := "1"
+		TapTap.arbEdit := TapTap.arb.Add("Edit", "w" . SetUp.Get("ArbWidth") . " c" . SetUp.Get("ArbEditColor") . " Background" . SetUp.Get("ArbEditBackground") . " r1 WantTab T4")
 		editHandler := ObjBindMethod(this, "ArbEditChanged")
 		TapTap.arbEdit.OnEvent("Change", editHandler)
 
 		TapTap.arb.SetFont(SetUp.Get("ArbListFontSize") . " " . SetUp.Get("ArbListFontWeight"), SetUp.Get("ArbListFont"))
-		TapTap.arb.MarginX := "1", TapTap.arb.MarginY := "1"
-		TapTap.arbList := TapTap.arb.Add("ListView", "R" . SetUp.Get("ArbListRows") . " wp -Hdr ReadOnly", ["1"])
+		TapTap.arbList := TapTap.arb.Add("ListView", "R" . SetUp.Get("ArbListRows") . " c" . SetUp.Get("ArbListColor") . " Background" . SetUp.Get("ArbListBackground") . " wp 0X2000 -Hdr ReadOnly", ["1"])
 		TapTap.arbEnter := TapTap.arb.Add("Button", "x-10 y-10 w1 h1 +default Hidden")
 		enterHandler := ObjBindMethod(this, "ArbEnterPressed")
 		TapTap.arbEnter.OnEvent("Click", enterHandler)	; Default Button Hidden
