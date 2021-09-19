@@ -93,7 +93,8 @@ Class AliasList {
 	}
 
 	static RunOnBoot() {
-		AliasList.onBootAlias.Run("")
+		if (AliasList.onBootAlias)
+			AliasList.onBootAlias.Run("")
 	}
 
 	static RunAlias(alias) {
@@ -147,28 +148,48 @@ Class AliasList {
 		;ini 파일의 Section을 이용하여 AliasList 작성
 		aliasList_ := []
 		aliasLine := ""
+		schedule := ""
 		aliasType := ""
 		commandLine := ""
 		sectionList := IniRead(aliasListFile)
 		Loop parse sectionList, "`n" {
-			if (A_LoopField != "OnBoot") {
-				aliasLine := IniRead(aliasListFile, A_LoopField, "Alias")
-			}
-			command := AliasList.GetCommandLine(aliasListFile, A_LoopField)
-			aliasType := command[1]
-			commandLine := command[2]
-			alias_ := Alias(aliasType, aliasLine, commandLine)
-			if (A_LoopField != "OnBoot") {
-				aliasList_.push(alias_)
-			} else {
-				AliasList.onBootAlias := alias_
+			try {
+				schedule := ""
+				if !(aliasLine := IniRead(aliasListFile, A_LoopField, "Alias", "")) {
+					if !(schedule := IniRead(aliasListFile, A_LoopField, "Schedule", "")) {
+						Throw Error(A_LoopField . "의 Alias가 없습니다.")
+					}
+				}
+				command := AliasList.GetCommandLine(aliasListFile, A_LoopField)
+				aliasType := command[1]
+				commandLine := command[2]
+				if (!aliasType or !commandLine) {
+					Throw Error(A_LoopField . "의 명령어 타입을 알 수 없습니다.")
+				}
+				alias_ := Alias(aliasType, aliasLine, commandLine)
+				if (A_LoopField != "OnBoot") {
+					if (!schedule) {
+						aliasList_.push(alias_)
+					} else {
+						Throw Error("Schedule 처리")
+					}
+				} else {
+					AliasList.onBootAlias := alias_
+				}
+			} catch Error as e {
+				MsgBox("별칭 구문 분석 에러`n" . e.Message, "별칭 리스트 작성", 16)
 			}
 		}
 		AliasList.aliasList := aliasList_
+		; AliasList.WriteAliasList()
 	}
 
-	static WriteList() {
+	static WriteAliasList() {
 		iniFile := "Test.ini"
+		section := "OnBoot"
+		IniWrite(AliasList.onBootAlias.GetAliasesString(), iniFile, section, "Alias")
+		aliasType := AliasList.onBootAlias.aliasType
+		IniWrite(AliasList.onBootAlias.GetCommandString(), iniFile, section, aliasType)
 		for index, alias_ in AliasList.aliasList {
 			section := "별칭 " . index
 			IniWrite(alias_.GetAliasesString(), iniFile, section, "Alias")

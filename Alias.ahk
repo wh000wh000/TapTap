@@ -192,15 +192,6 @@ class Alias {
 	}
 
 	ParseOption(option) {
-		; option이 대문자 한 자일 경우, 모든 tokens에 대해 일치하는 대문자 일치 여부 체크?
-		; 첫 번째 Tokens의 첫 글자가 영문자 소문자가 아니면서, 일치하는 경우: "ShortCut"
-		; Tokens의 첫 글자가 영문자 소문자가 아니면서, 일치하는 경우: [0, index]
-		; 첫 별칭에서 처음부터 일치하는 경우: [1, index]
-		; 2번째 이후 별칭에서 처음부터 일치하는 경우: [2, index]
-		; 중간의 대문자가 일치하는 경우: [3, index]
-		; 아무 곳이나 일치하는 경우: [4, index]
-		; 일치하는 곳이 없는 경우: [5, index]
-		; option 이 "" 인 경우: [6, index]
 		if (!this.optArray)
 			return [[this.GetAliasesString()], 0]
 		list := []
@@ -279,7 +270,7 @@ class Alias {
 		{
 			if InStr(A_LoopField, "EncryptedOption", true) {
 				array_.push(Trim(StrReplace(A_LoopField, "EncryptedOption", encrypt, 1)))
-			} else if Trim(A_LoopField) {
+			} else {
 				array_.push(Trim(A_LoopField))
 			}
 		}
