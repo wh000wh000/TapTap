@@ -10,11 +10,24 @@ FileEncoding("UTF-8")
 #Include "AliasList.ahk"
 
 TapTap()
+
 ; CapsLock 키 변경 to LControl by KeyTweak
+; CapsLock::
+; ChangeCapsLock(_)
+; {
+; 	if (GetKeyState("CapsLock", "T")) {
+; 		Send "{CapsLock}"
+; 	}
+; }
+; ^!+F11::CapsLock
+; ^!+F12::LControl
 ; CapsLock Toggle 키 (CapsLock + 우측 Shift)
 >+LControl::
+ToggleCapsLock(_)
 {
-	SetCapsLockState(!GetKeyState("CapsLock", "T"))
+	if TapTap.toggleCapsLock {
+		SetCapsLockState(!GetKeyState("CapsLock", "T"))
+	}
 }
 
 class TapTap {
@@ -28,6 +41,7 @@ class TapTap {
 	static isInputHighLighting := false
 	static isIniChanged := false
 	static activeWindow := ""
+	static toggleCapsLock := true
 
 	__New() {
 		;@Ahk2Exe-SetMainIcon TapTap.ico
@@ -37,24 +51,7 @@ class TapTap {
 		this.CreateARB()
 	}
 
-	; 프로그램 함수
-	ShowAliasRunBox(_) {
-		if (TapTap.isArbShowing)
-			return
-
-		tapTap_ := SetUp.Get("TapTap")
-		hotkeyTime := SetUp.Get("TapTapSpeed")
-
-		If (tapTap_ and A_ThisHotkey = A_PriorHotkey and A_TimeSincePriorHotkey < SetUp.Get("TapTapSpeed")) {
-			this.ShowARB()
-		} else if (!tapTap_) {
-			this.ShowARB()
-		}
-	}
-
 	HideARB() {
-		timer := ObjBindMethod(this, "ArbEscapeTimer")
-		SetTimer(timer, 0)
 		TapTap.arb.Hide()
 		TapTap.isArbShowing := false
 	}
@@ -66,58 +63,56 @@ class TapTap {
 	}
 
 	RestoreActiveWindow() {
-		activeWin := "ahk_id " . TapTap.activeWindow
-		WinActivate(activeWin)
-		WinWaitActive(activeWin)
+		try {
+			activeWin := "ahk_id " . TapTap.activeWindow
+			WinActivate(activeWin)
+			WinWaitActive(activeWin)
+		} catch Error as e {
+			_ := e.Message	; ARB 도중 Active 창을 닫은 경우
+		}
 	}
 
-	TabProcessTimer() {
-		previousAlias := AliasList.previousAlias
-		ControlSend("{BackSpace}" . previousAlias . "{Enter}", "Edit1", TapTap.arb)
-	}
-
-	SpaceProcessTimer() {
-		previousAlias := AliasList.previousAlias
-		ControlSend("{End}{Space}", "Edit1", TapTap.arb)
-	}
-
-	ArbEditChanged(x, _) {
-		TapTap.arb.Submit(false)
-		arbEdit := TapTap.arbEdit.value
+	ArbEditChanged(arbEdit, _) {
+		; obj := TapTap.arb.Submit(false)
+		; arbEdit := TapTap.arbEdit.value
 
 		; 입력란 하이라이트, Tab, Space 처리
 		if (TapTap.isInputHighLighting) {
 			TapTap.isInputHighLighting := false
-			if InStr(arbEdit, A_Space) {
-				TapTap.arbEdit.Value := AliasList.previousAlias
-				timer := ObjBindMethod(this, "SpaceProcessTimer")
-				SetTimer(timer, -100)
+			if InStr(arbEdit.Value, A_Space) {
+				arbEdit.Value := AliasList.previousAlias
+				SetTimer(() => ControlSend("{End}{Space}", "Edit1", TapTap.arb), -20)
 				return
 			}
 
-			if InStr(arbEdit, A_Tab) {
-				; GuiControl, , Edit1, % AliasList.previousAlias
-				timer := ObjBindMethod(this, "TabProcessTimer")
-				SetTimer(timer, -100)
+			if InStr(arbEdit.Value, A_Tab) {
+				SetTimer(() => ControlSend("{BackSpace}" . AliasList.previousAlias . "{Enter}", "Edit1", TapTap.arb), -20)
 				return
 			}
-		} else if InStr(arbEdit, A_Tab) {
-			SetTimer(() => ControlSend("{Backspace}{Enter}", "Edit1", TapTap.arb), -100)
+		} else if InStr(arbEdit.Value, A_Tab) {
+			SetTimer(() => ControlSend("{Backspace}{Enter}", "Edit1", TapTap.arb), -20)
 			return
 		}
-		this.UpdateListView(arbEdit)
+		this.UpdateListView(arbEdit.Value)
 	}
 
 	ArbEnterPressed(x, _) {
 		this.HideARB()	; ARB 화면 죽인 후, 명령 실행
-		TapTap.arb.Submit()
 		arbEdit := TapTap.arbEdit.value
 		res := AliasList.RunAlias(arbEdit)
+		if (InStr(res[1], "DeferredRun", true) or InStr(res[1], "Error")) {
+			showArb := ObjBindMethod(this, "ShowAliasRunBox")
+			Hotkey(TapTap.hotkey, showArb, "On")
+		}
 		if InStr(res[1], "Error") {
 			this.RestoreActiveWindow()
-		} else if InStr(res[1], "IniChanged") {
+		} else if InStr(res[1], "IniChanged", true) {
 			this.SetHotkey()
-			TapTap.isIniChanged := true
+			TapTap.isIniChanged := true	; For CreateARB
+		} else if InStr(res[1], "DeferredAfterHotkeyReset", true) {
+			showArb := ObjBindMethod(this, "ShowAliasRunBox")
+			Hotkey(TapTap.hotkey, showArb, "Off")
+			SetTimer(() => ControlSend("{Enter}", "Edit1", TapTap.arb), -20)
 		}
 	}
 
@@ -140,22 +135,27 @@ class TapTap {
 		{
 			TapTap.arbList.Add(, val)
 		}
-		; TapTap.arbList.Modify(1, "Select")
 		TapTap.arbList.Opt("+Redraw")
 	}
 
-	PreviousAliasSendTimer() {
-		if (AliasList.previousAlias = "") {
-			ControlSend("^a{Space}{BackSpace}", "Edit1", TapTap.arb)
-		} else {
-			ControlSend("^a" . AliasList.previousAlias . "^a", "Edit1", TapTap.arb)
-			TapTap.isInputHighLighting := true
+	ShowAliasRunBox(_) {
+		if (TapTap.isArbShowing)
+			return
+
+		tapTap_ := SetUp.Get("TapTap")
+		hotkeyTime := SetUp.Get("TapTapSpeed")
+
+		If (tapTap_ and A_ThisHotkey = A_PriorHotkey and A_TimeSincePriorHotkey < SetUp.Get("TapTapSpeed")) {
+			this.ShowARB()
+		} else if (!tapTap_) {
+			this.ShowARB()
 		}
 	}
 
 	ShowARB() {
 		TapTap.isArbShowing := true
 		TapTap.activeWindow := WinExist("A")
+		; SetKeyDelay(-1, -1)
 
 		if (TapTap.isIniChanged) {
 			TapTap.arb.Destroy()
@@ -226,6 +226,9 @@ class TapTap {
 	}
 
 	InitTapTap() {
+		SetCapsLockState("Off")
+		; toggleCaps := SetCapsLockState(!GetKeyState("CapsLock", "T"))
+		; Hotkey(">+LControl", toggleCaps)
 		this.CopyInitFiles()
 		this.SetHotkey()
 		ScreenSaver()
@@ -240,6 +243,7 @@ class TapTap {
 				Hotkey(TapTap.hotkey, showArb, "Off")
 			}
 			if (!TapTap.hotkey or hotkey_ != TapTap.hotkey) {
+				; #MaxThreadsPerHotkey 1
 				Hotkey(hotkey_, showArb, "On")
 				TapTap.hotkey := hotkey_
 			}

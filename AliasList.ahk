@@ -1,7 +1,8 @@
 ﻿#Include "SetUp.ahk"
 #Include "Alias.ahk"
+#Include "Scheduler.ahk"
 Class AliasList {
-	static aliasTypes := ["Run", "Script", "BuiltIn", "Site", "Folder", "NewRun", "Etc"]
+	static aliasTypes := ["Run", "Script", "BuiltIn", "Site", "Folder", "NewRun"]
 	static aliasList := ""	; Alias List 배열
 	static modificationTime := ""
 	static previousAlias := ""
@@ -115,10 +116,12 @@ Class AliasList {
 				option := AliasList.aliasList[AliasList.aliasId].optArray[optionId]
 			}
 			res := AliasList.aliasList[AliasList.aliasId].Run(option)
+			if InStr(res[1], "DeferredAfterHotkeyReset", true)
+				return res
 			if (AliasList.isShortCut) {
 				AliasList.previousAlias	:= ""
 				AliasList.isShortCut := false
-			} else if !InStr(res[1], "Error") {
+			} else if InStr(res[1], "Ok") {
 				AliasList.previousAlias := command
 			} else {
 				AliasList.previousAlias	:= ""
@@ -148,7 +151,7 @@ Class AliasList {
 		;ini 파일의 Section을 이용하여 AliasList 작성
 		aliasList_ := []
 		aliasLine := ""
-		schedule := ""
+		scheduleList := []
 		aliasType := ""
 		commandLine := ""
 		sectionList := IniRead(aliasListFile)
@@ -166,14 +169,16 @@ Class AliasList {
 				if (!aliasType or !commandLine) {
 					Throw Error(A_LoopField . "의 명령어 타입을 알 수 없습니다.")
 				}
-				alias_ := Alias(aliasType, aliasLine, commandLine)
 				if (A_LoopField != "OnBoot") {
 					if (!schedule) {
-						aliasList_.push(alias_)
+						alias_ := Alias(aliasType, aliasLine, commandLine)
+						aliasList_.Push(alias_)
 					} else {
-						Throw Error("Schedule 처리")
+						alias_ := Alias(aliasType, schedule, commandLine)
+						scheduleList.Push(alias_)
 					}
 				} else {
+					alias_ := Alias(aliasType, aliasLine, commandLine)
 					AliasList.onBootAlias := alias_
 				}
 			} catch Error as e {
@@ -181,6 +186,7 @@ Class AliasList {
 			}
 		}
 		AliasList.aliasList := aliasList_
+		Scheduler(scheduleList)
 		; AliasList.WriteAliasList()
 	}
 

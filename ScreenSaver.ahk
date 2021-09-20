@@ -21,8 +21,8 @@
 				baseInterval := interval
 			}
 		}
-		; timer := ScreenSaver.timer
-		SetTimer(ScreenSaver.timer, baseInterval) ;, % timer, % baseInterval
+		timer := ScreenSaver.timer
+		SetTimer(timer, baseInterval)
 	}
 
 	IsMouseOn() {

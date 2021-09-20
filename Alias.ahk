@@ -1,8 +1,8 @@
 ﻿#Include "SetUp.ahk"
 class Alias {
 	static lowerCase := "abcdefghijklmnopqrstuvwxyz."
-	static iniFiles := ["AliasList", "Ini"]
-	static builtInFuncs := ["EditAliasListIni", "EditTapTapIni"]
+	static iniFiles := ["AliasList", "TapTap"]
+	static builtInFuncs := ["EditAliasListIni", "EditTapTapIni", "EditIniFile"]
 
 	QuitTapTap(_) {
 		ExitApp
@@ -12,45 +12,63 @@ class Alias {
 		Reload
 	}
 
-	GetOptionIndex(option, options) {
+	GetIniFileIndex(option, options) {
 		if (!option) {
 			return 1
-		} else if (StrLen(option) = 1) {
-			for index, value in options {
-				if InStr(value, option, true) {
-					return index
-				}
-			}
 		} else {
 			for index, value in options {
 				if InStr(value, option) {
 					return index
 				}
 			}
+			return 0
 		}
 	}
 
 	EditIniFile(option) {
-		fn := Alias.builtInFuncs[this.GetOptionIndex(option, Alias.iniFiles)]
-		return ObjBindMethod(this, fn).Call("")
+		if (index :=this.GetIniFileIndex(option, Alias.iniFiles)) {
+			fn := Alias.builtInFuncs[index]
+			return ObjBindMethod(this, fn).Call("")
+		}
+		return this.Edit(option)
 	}
 
 	EditTapTapIni(_) {
-		editor := SetUp.Get("Editor")
-		tapTapIniFile := SetUp.iniFile
-		RunWait(editor . " " . tapTapIniFile)
-		SetUp.isIniChanged := true
-		return "Ok, IniChanged"
+		static isDeferred := false
+		if (isDeferred) {
+			isDeferred := false
+			editor := SetUp.Get("Editor")
+			tapTapIniFile := SetUp.iniFile
+			RunWait(editor . " " . tapTapIniFile)
+			SetUp.isIniChanged := true
+			return "DeferredRun, IniChanged"
+		} else {
+			isDeferred := true
+			return "DeferredFunctionEditTapTapIni"
+		}
 	}
 
 	EditAliasListIni(_) {
+		static isDeferred := false
+		if (isDeferred) {
+			isDeferred := false
+			editor := SetUp.Get("Editor")
+			aliasListIniFile := SetUp.GetFilePath("AliasList")
+			RunWait(editor . " " . AliasListIniFile)
+			return "DeferredRun"
+		} else {
+			isDeferred := true
+			return "DeferredFunctionEditAliasListIni"
+		}
+	}
+
+	Edit(opt) {
 		editor := SetUp.Get("Editor")
-		aliasListIniFile := SetUp.GetFilePath("AliasList")
-		Run(editor . " " . AliasListIniFile)
-		return "Ok"
+		Run(editor . " " . opt)
 	}
 
 	Run(option) {
+		static deferredFunction := ""
 		aliasType := this.aliasType
 		command := this.command
 		defaultOption := this.option
@@ -72,8 +90,19 @@ class Alias {
 					}
 					Run(command . " " . option . defaultOption, workingDir, &pid)
 				case "BuiltIn":
-					builtInFunc := ObjBindMethod(this, command)
-					res .= ", " . builtInFunc(option)
+					if (deferredFunction) {
+						builtInFunc := ObjBindMethod(this, deferredFunction)
+						deferredFunction := ""
+						res .= builtInFunc(option)
+					} else {
+						builtInFunc := ObjBindMethod(this, command)
+						if InStr((r := builtInFunc(option)), "DeferredFunction", 1) {
+							deferredFunction := StrReplace(r, "DeferredFunction", "", 1)
+							return ["DeferredAfterHotkeyReset", 0]
+						} else {
+							res .= r
+						}
+					}
 				case "Folder":
 					Run("Explorer " . command . option . defaultOption, , &pid)
 				default:	; Etc
@@ -83,6 +112,7 @@ class Alias {
 				WinWaitActive("ahk_pid " . pid)
 			return [res . ", Ok", pid]
 		} catch Error as e {
+			deferredFunction := ""
 			msg := "명령어 타입: " . aliasType . "`n"
 			msg .= "명령어: " . command . "`n"
 			msg .= "옵션: " . option . defaultOption . "`n"
