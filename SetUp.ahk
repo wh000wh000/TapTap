@@ -71,6 +71,9 @@
         newDict.Hotkey := IniRead(setUpFile, section, "Hotkey", "Control")
         newDict.TapTap := IniRead(setUpFile, section, "TapTap", "false") = "false" ? false: true
         newDict.TapTapSpeed := IniRead(setUpFile, section, "TapTapSpeed", 350)
+        newDict.CapsLockToLControl := IniRead(setUpFile, section, "CapsLockToLControl", "true") = "false" ? false: true
+        newDict.PressEsc := IniRead(setUpFile, section, "PressEsc", "true") = "false" ? false: true
+        newDict.ToggleCapsLock := IniRead(setUpFile, section, "ToggleCapsLock", "true") = "false" ? false: true
         IniWrite(A_WorkingDir, setUpFile, section, "WorkingFolder")
         newDict.AliasList := IniRead(setUpFile, section, "AliasList", "WorkingFolder\Lib\AliasList.ini")
         newDict.ArbBackground := IniRead(setUpFile, section, "ArbBackground", "1E1E1E")
@@ -88,7 +91,7 @@
         newDict.ArbListBackground := IniRead(setUpFile, section, "ArbListBackground", "1E1E1E")
         newDict.ArbMoveX := IniRead(setUpFile, section, "ArbMoveX", "410")
         newDict.ArbMoveY := IniRead(setUpFile, section, "ArbMoveY", "220")
-        newDict.NeedScreenSavering := IniRead(setUpFile, section, "NeedScreenSavering", "true")
+        newDict.NeedScreenSavering := IniRead(setUpFile, section, "NeedScreenSavering", "true" = "false" ? false: true)
         newDict.ScreenSaverOnMouse := IniRead(setUpFile, section, "ScreenSaverOnMouse", "LeftTop")
         newDict.AutoHotkeyExe := IniRead(setUpFile, section, "AutoHotkeyExe", "")
         newDict.AhkFolder := IniRead(setUpFile, section, "AhkFolder", "")

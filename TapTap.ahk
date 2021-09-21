@@ -2,31 +2,46 @@
 #SingleInstance Force
 Persistent
 SetWorkingDir(A_ScriptDir)  ; Ensures a consistent starting directory.
-SendMode("Input")  ; Recommended for new scripts due to its superior speed and reliability.
+; SendMode("Input")  ; Recommended for new scripts due to its superior speed and reliability.
 FileEncoding("UTF-8")
 
 #Include "SetUp.ahk"
 #Include "ScreenSaver.ahk"
 #Include "AliasList.ahk"
 
-TapTap()
+tt := TapTap()
 
-; CapsLock 키 변경 to LControl by KeyTweak
-; CapsLock::
-; ChangeCapsLock(_)
-; {
-; 	if (GetKeyState("CapsLock", "T")) {
-; 		Send "{CapsLock}"
-; 	}
-; }
-; ^!+F11::CapsLock
-; ^!+F12::LControl
+#HotIf (TapTap.isCapsLockLControl and TapTap.pressEsc)
+>+CapsLock::SendInput("{Escape}")
+#HotIf (TapTap.isCapsLockLControl and TapTap.pressEsc and TapTap.toggleCapsLock)
+; CapsLock Toggle 키 (좌측 Control + 우측 Shift)
+>+LControl::SetCapsLockState(!GetKeyState("CapsLock", "T"))
+#HotIf (TapTap.isCapsLockLControl and TapTap.toggleCapsLock)
 ; CapsLock Toggle 키 (CapsLock + 우측 Shift)
->+LControl::
-ToggleCapsLock(_)
+>+CapsLock::CapsLock
+#HotIf (TapTap.isCapsLockLControl)
+; CapsLock 키 변경 to LControl (not KeyTweak, but AutoHotkey)
+CapsLock::LControl
+Capslock Up::
 {
-	if TapTap.toggleCapsLock {
-		SetCapsLockState(!GetKeyState("CapsLock", "T"))
+	SendInput("{LControl Up}")
+
+	if (TapTap.isCapsLockHotkey) {
+		SetCapsLockState("AlwaysOff")
+		if (TapTap.isTapTapping) {
+			elapsed := A_TickCount - TapTap.tappedTime
+			if (elapsed < 100) {	; 계속 눌림 방지
+				TapTap.isTapTapping := false
+			} else if (SetUp.Get("TapTap") and (elapsed > 100) and (elapsed < SetUp.Get("TapTapSpeed"))) {
+				tt.ShowARB()
+				TapTap.isTapTapping := false
+			} else {
+				TapTap.isTapTapping := false
+			}
+		} else {
+			TapTap.isTapTapping := true
+			TapTap.tappedTime := A_TickCount
+		}
 	}
 }
 
@@ -41,7 +56,12 @@ class TapTap {
 	static isInputHighLighting := false
 	static isIniChanged := false
 	static activeWindow := ""
-	static toggleCapsLock := true
+	static toggleCapsLock := false
+	static isCapsLockLControl := false
+	static isCapsLockHotkey := false
+	static isTapTapping := false
+	static tappedTime := 0
+	static pressEsc := false
 
 	__New() {
 		;@Ahk2Exe-SetMainIcon TapTap.ico
@@ -103,6 +123,7 @@ class TapTap {
 		if (InStr(res[1], "DeferredRun", true) or InStr(res[1], "Error")) {
 			showArb := ObjBindMethod(this, "ShowAliasRunBox")
 			Hotkey(TapTap.hotkey, showArb, "On")
+			TapTap.isCapsLockHotkey := InStr(TapTap.hotkey, "Control") or InStr(TapTap.hotkey, "Ctrl")
 		}
 		if InStr(res[1], "Error") {
 			this.RestoreActiveWindow()
@@ -112,6 +133,7 @@ class TapTap {
 		} else if InStr(res[1], "DeferredAfterHotkeyReset", true) {
 			showArb := ObjBindMethod(this, "ShowAliasRunBox")
 			Hotkey(TapTap.hotkey, showArb, "Off")
+			TapTap.isCapsLockHotkey := !InStr(TapTap.hotkey, "Control") and InStr(TapTap.hotkey, "Ctrl")
 			SetTimer(() => ControlSend("{Enter}", "Edit1", TapTap.arb), -20)
 		}
 	}
@@ -145,7 +167,7 @@ class TapTap {
 		tapTap_ := SetUp.Get("TapTap")
 		hotkeyTime := SetUp.Get("TapTapSpeed")
 
-		If (tapTap_ and A_ThisHotkey = A_PriorHotkey and A_TimeSincePriorHotkey < SetUp.Get("TapTapSpeed")) {
+	If (tapTap_ and (A_ThisHotkey = A_PriorHotkey) and (A_TimeSincePriorHotkey > 100) and  (A_TimeSincePriorHotkey < SetUp.Get("TapTapSpeed"))) {
 			this.ShowARB()
 		} else if (!tapTap_) {
 			this.ShowARB()
@@ -226,9 +248,6 @@ class TapTap {
 	}
 
 	InitTapTap() {
-		SetCapsLockState("Off")
-		; toggleCaps := SetCapsLockState(!GetKeyState("CapsLock", "T"))
-		; Hotkey(">+LControl", toggleCaps)
 		this.CopyInitFiles()
 		this.SetHotkey()
 		ScreenSaver()
@@ -237,14 +256,23 @@ class TapTap {
 
 	SetHotkey() {
 		try {
+			if (TapTap.isCapsLockLControl := SetUp.Get("CapsLockToLControl")) {
+				SetCapsLockState("AlwaysOff")
+				TapTap.pressEsc := SetUp.Get("PressESC")
+				TapTap.toggleCapsLock := SetUp.Get("ToggleCapsLock")
+			} else {
+				SetCapsLockState("Off")
+			}
 			hotkey_ := SetUp.Get("Hotkey")
 			showArb := ObjBindMethod(this, "ShowAliasRunBox")
 			if (TapTap.hotkey and hotkey_ != TapTap.hotkey) {
 				Hotkey(TapTap.hotkey, showArb, "Off")
+				TapTap.isCapsLockHotkey := !InStr(TapTap.hotkey, "Control") and !InStr(TapTap.hotkey, "Ctrl")
 			}
 			if (!TapTap.hotkey or hotkey_ != TapTap.hotkey) {
 				; #MaxThreadsPerHotkey 1
 				Hotkey(hotkey_, showArb, "On")
+				TapTap.isCapsLockHotkey := InStr(hotkey_, "Control") or InStr(hotkey_, "Ctrl")
 				TapTap.hotkey := hotkey_
 			}
 		} catch Error as e {
